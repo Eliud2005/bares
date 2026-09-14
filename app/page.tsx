@@ -1,13 +1,11 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 
 export default function LoginPage() {
-  const router = useRouter()
   const supabase = createClient()
-  
+
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
@@ -18,10 +16,15 @@ export default function LoginPage() {
     setLoading(true)
     setErrorMsg('')
 
-    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    })
+    // 1. Cerrar cualquier sesión previa antes de loguearse
+    await supabase.auth.signOut()
+
+    // 2. Autenticar
+    const { data: authData, error: authError } =
+      await supabase.auth.signInWithPassword({
+        email,
+        password,
+      })
 
     if (authError) {
       setErrorMsg(authError.message)
@@ -30,36 +33,42 @@ export default function LoginPage() {
     }
 
     const user = authData.user
-    if (user) {
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', user.id)
-        .single()
+    if (!user) {
+      setErrorMsg('No se pudo obtener el usuario.')
+      setLoading(false)
+      return
+    }
 
-      if (profileError || !profile) {
-        setErrorMsg('Este usuario no tiene un perfil o rol asignado en el sistema.')
-        setLoading(false)
-        return
-      }
+    // 3. Obtener el rol del perfil
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single()
 
-      // 🔍 IMPRIME EN CONSOLA EL ROL EXACTO QUE LLEGA DE SUPABASE
-      console.log("Rol detectado en base de datos:", profile.role);
+    if (profileError || !profile) {
+      setErrorMsg('Este usuario no tiene un perfil o rol asignado en el sistema.')
+      setLoading(false)
+      return
+    }
 
-      const role = profile.role.trim().toLowerCase()
-      
-      if (role === 'super_admin') {
-        router.push('/super-admin')
-      } else if (role === 'admin') {
-        router.push('/admin')
-      } else if (role === 'cashier') {
-        router.push('/cashier')
-      } else if (role === 'waiter') {
-        router.push('/waiter')
-      } else {
-        alert(`Rol desconocido detectado: "${role}". Redirigiendo al inicio.`);
-        router.push('/')
-      }
+    console.log('✅ Rol detectado:', profile.role)
+
+    const role = profile.role.trim().toLowerCase()
+
+    // 4. Redirigir con recarga completa (window.location.href)
+    //    en vez de router.push para limpiar todo el estado en memoria
+    if (role === 'super_admin') {
+      window.location.href = '/super-admin'
+    } else if (role === 'admin') {
+      window.location.href = '/admin'
+    } else if (role === 'cashier') {
+      window.location.href = '/cashier'
+    } else if (role === 'waiter') {
+      window.location.href = '/waiter'
+    } else {
+      alert(`Rol desconocido detectado: "${role}". Redirigiendo al inicio.`)
+      window.location.href = '/'
     }
 
     setLoading(false)
@@ -75,7 +84,9 @@ export default function LoginPage() {
 
         <form onSubmit={handleLogin} className="space-y-4">
           <div>
-            <label className="block text-xs font-semibold uppercase text-gray-400 mb-1">Correo electrónico</label>
+            <label className="block text-xs font-semibold uppercase text-gray-400 mb-1">
+              Correo electrónico
+            </label>
             <input
               type="email"
               value={email}
@@ -86,7 +97,9 @@ export default function LoginPage() {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold uppercase text-gray-400 mb-1">Contraseña</label>
+            <label className="block text-xs font-semibold uppercase text-gray-400 mb-1">
+              Contraseña
+            </label>
             <input
               type="password"
               value={password}
