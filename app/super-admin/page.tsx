@@ -7,16 +7,18 @@ import { useEffect, useState } from 'react';
 type Bar = {
   id: string;
   name: string;
+  slug: string;
   address?: string;
+  phone?: string;
+  is_active?: boolean;
   created_at?: string;
 };
 
 type Profile = {
   id: string;
-  email?: string;
+  full_name?: string;
   role: string;
   bar_id?: string;
-  bars?: { name: string } | { name: string }[]; // 👈 Actualizado aquí
 };
 
 export default function SuperAdminDashboard() {
@@ -24,13 +26,21 @@ export default function SuperAdminDashboard() {
   const [bars, setBars] = useState<Bar[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   
-  // Estado para el modal de crear nuevo bar
+  const [activeTab, setActiveTab] = useState<'active' | 'inactive'>('active');
+
   const [isCreatingBar, setIsCreatingBar] = useState(false);
   const [newBarName, setNewBarName] = useState('');
   const [newBarAddress, setNewBarAddress] = useState('');
+  const [newBarPhone, setNewBarPhone] = useState('');
+  const [adminName, setAdminName] = useState('');
+  const [adminEmail, setAdminEmail] = useState('');
+  const [adminPassword, setAdminPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  // Alerta bonita
+  const [selectedBarForStaff, setSelectedBarForStaff] = useState<Bar | null>(null);
+  const [managingBar, setManagingBar] = useState<Bar | null>(null);
+  const [confirmDeactivate, setConfirmDeactivate] = useState(false);
+
   const [appAlert, setAppAlert] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   const router = useRouter();
@@ -43,7 +53,6 @@ export default function SuperAdminDashboard() {
       return;
     }
 
-    // Verificar opcionalmente si es super admin por seguridad en el cliente
     const { data: profileData } = await supabase
       .from('profiles')
       .select('role')
@@ -56,35 +65,18 @@ export default function SuperAdminDashboard() {
       return;
     }
 
-    // 1. Cargar todos los bares de la cadena/negocio
     const { data: barsData, error: barsError } = await supabase
       .from('bars')
-      .select('*')
+      .select('id, name, slug, address, phone, is_active, created_at')
       .order('name', { ascending: true });
 
-    if (barsError) {
-      console.error('Error cargando bares:', barsError.message);
-    } else if (barsData) {
-      setBars(barsData);
-    }
+    if (!barsError && barsData) setBars(barsData);
 
-    // 2. Cargar perfiles de usuarios (empleados/admins de sucursales)
     const { data: profilesData, error: profilesError } = await supabase
       .from('profiles')
-      .select(`
-        id,
-        role,
-        bar_id,
-        bars (
-          name
-        )
-      `);
+      .select('id, full_name, role, bar_id');
 
-    if (profilesError) {
-      console.error('Error cargando perfiles:', profilesError.message);
-    } else if (profilesData) {
-      setProfiles(profilesData as Profile[]);
-    }
+    if (!profilesError && profilesData) setProfiles(profilesData as Profile[]);
 
     setLoading(false);
   };
@@ -98,38 +90,100 @@ export default function SuperAdminDashboard() {
     router.push('/');
   };
 
-  // Función para registrar un nuevo bar
-  const handleCreateBar = async (e: React.FormEvent) => {
+  // REGISTRO A TRAVÉS DE LA FUNCIÓN SQL RPC (Robusta y con asignación de rol correcta)
+  const handleCreateBarWithAdmin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newBarName.trim()) return;
+    if (!newBarName.trim() || !adminName.trim() || !adminEmail.trim() || !adminPassword.trim()) {
+      setAppAlert({ type: 'error', message: 'Por favor llena todos los campos obligatorios.' });
+      return;
+    }
     setSubmitting(true);
 
-    const { error } = await supabase
-      .from('bars')
-      .insert({
-        name: newBarName.trim(),
-        address: newBarAddress.trim() || null
+    try {
+      const slug = newBarName
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+
+      // 1. Insertar el bar primero
+      const { data: barData, error: barError } = await supabase
+        .from('bars')
+        .insert({
+          name: newBarName.trim(),
+          slug: slug,
+          address: newBarAddress.trim() || null,
+          phone: newBarPhone.trim() || null,
+          is_active: true
+        })
+        .select()
+        .single();
+
+      if (barError) throw new Error('Error al crear el bar: ' + barError.message);
+
+      // 2. Llamar a la función RPC segura en la base de datos para crear el usuario y asignar el rol 'admin'
+      const { data: rpcData, error: rpcError } = await supabase.rpc('create_bar_admin', {
+        bar_id_input: barData.id,
+        admin_email: adminEmail.trim().toLowerCase(),
+        admin_password: adminPassword.trim(),
+        admin_name: adminName.trim()
       });
 
-    if (error) {
-      setAppAlert({ type: 'error', message: 'Error al crear el bar: ' + error.message });
-    } else {
-      setAppAlert({ type: 'success', message: '¡Bar creado exitosamente!' });
+      if (rpcError) throw new Error('Error en función SQL: ' + rpcError.message);
+      if (rpcData && rpcData.success === false) throw new Error('No se pudo registrar el administrador.');
+
+      setAppAlert({ type: 'success', message: '¡Sucursal y Administrador creados con éxito!' });
       setNewBarName('');
       setNewBarAddress('');
+      setNewBarPhone('');
+      setAdminName('');
+      setAdminEmail('');
+      setAdminPassword('');
       setIsCreatingBar(false);
       await loadSuperAdminData();
-    }
 
-    setSubmitting(false);
+    } catch (err: any) {
+      setAppAlert({ type: 'error', message: err.message || 'Ocurrió un error inesperado.' });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleUpdateBarStatus = async (barId: string, status: boolean) => {
+    try {
+      setSubmitting(true);
+      const { error } = await supabase
+        .from('bars')
+        .update({ is_active: status })
+        .eq('id', barId);
+
+      if (error) throw new Error(error.message);
+
+      setAppAlert({ 
+        type: 'success', 
+        message: status ? '¡Sucursal reactivada correctamente!' : 'Sucursal desactivada con éxito.' 
+      });
+      
+      setManagingBar(null);
+      setConfirmDeactivate(false);
+      await loadSuperAdminData();
+    } catch (err: any) {
+      setAppAlert({ type: 'error', message: 'Error al cambiar estado: ' + err.message });
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   if (loading) return <div className="p-8 text-white bg-slate-950 min-h-screen">Cargando panel maestro...</div>;
 
+  const activeBarsList = bars.filter(b => b.is_active === true || b.is_active === undefined);
+  const inactiveBarsList = bars.filter(b => b.is_active === false);
+  const displayedBars = activeTab === 'active' ? activeBarsList : inactiveBarsList;
+
   return (
     <main className="min-h-screen bg-slate-950 text-white p-6 relative">
       
-      {/* ALERTA FLOTANTE */}
       {appAlert && (
         <div className="fixed top-6 right-6 z-50 animate-bounce">
           <div className={`flex items-center gap-3 px-5 py-4 rounded-2xl shadow-2xl border ${
@@ -148,10 +202,9 @@ export default function SuperAdminDashboard() {
 
       <div className="max-w-6xl mx-auto space-y-8">
         
-        {/* HEADER */}
         <header className="flex justify-between items-center border-b border-slate-800 pb-5">
           <div>
-            <span className="bg-purple-600 text-xs px-3 py-1 rounded-full font-bold uppercase tracking-wider">Super Administrador</span>
+            <span className="bg-purple-600 text-xs px-3 py-1 rounded-full font-bold uppercase tracking-wider">Diamond Code SaaS</span>
             <h1 className="text-3xl font-black mt-2">Panel Maestro de Bares</h1>
           </div>
           <div className="flex gap-3">
@@ -159,61 +212,100 @@ export default function SuperAdminDashboard() {
               onClick={() => setIsCreatingBar(true)}
               className="bg-purple-600 hover:bg-purple-500 text-white font-bold px-4 py-2.5 rounded-xl text-sm transition shadow-lg shadow-purple-600/20"
             >
-              + Registrar Nuevo Bar
+              + Registrar Bar + Admin
             </button>
             <button 
               onClick={handleLogout}
-              className="bg-red-600 hover:bg-red-700 px-4 py-2.5 rounded-xl text-sm font-medium transition"
+              className="bg-slate-800 hover:bg-slate-700 px-4 py-2.5 rounded-xl text-sm font-medium transition"
             >
               Cerrar Sesión
             </button>
           </div>
         </header>
 
-        {/* MÉTRICAS RÁPIDAS GLOBALES */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl">
-            <h2 className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-1">Total de Bares Activos</h2>
-            <p className="text-4xl font-black text-purple-400">{bars.length}</p>
+            <h2 className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-1">Bares Activos</h2>
+            <p className="text-4xl font-black text-purple-400">{activeBarsList.length}</p>
           </div>
           <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl">
-            <h2 className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-1">Personal Registrado (Staff)</h2>
-            <p className="text-4xl font-black text-sky-400">{profiles.length}</p>
+            <h2 className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-1">Bares Inactivos / Desactivados</h2>
+            <p className="text-4xl font-black text-amber-400">{inactiveBarsList.length}</p>
           </div>
         </div>
 
-        {/* LISTADO DE BARES */}
-        <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl space-y-4">
-          <div className="flex justify-between items-center">
-            <h2 className="text-xl font-bold">Mis Sucursales / Bares</h2>
+        <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl space-y-6">
+          <div className="flex border-b border-slate-800 gap-4 pb-3">
+            <button
+              onClick={() => setActiveTab('active')}
+              className={`pb-2 text-sm font-bold transition relative ${
+                activeTab === 'active' ? 'text-purple-400 border-b-2 border-purple-500' : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              🟢 Bares Activos ({activeBarsList.length})
+            </button>
+            <button
+              onClick={() => setActiveTab('inactive')}
+              className={`pb-2 text-sm font-bold transition relative ${
+                activeTab === 'inactive' ? 'text-amber-400 border-b-2 border-amber-500' : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              ⛔ Bares Inactivos ({inactiveBarsList.length})
+            </button>
           </div>
 
-          {bars.length === 0 ? (
+          {displayedBars.length === 0 ? (
             <div className="text-center py-12 text-slate-500 text-sm">
-              No hay bares registrados en la base de datos todavía. ¡Crea el primero arriba!
+              {activeTab === 'active' ? 'No hay bares activos registrados.' : 'No hay ningún bar inactivo.'}
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {bars.map((bar) => {
-                const staffCount = profiles.filter(p => p.bar_id === bar.id).length;
+              {displayedBars.map((bar) => {
+                const barStaff = profiles.filter(p => p.bar_id === bar.id);
+                const isInactive = bar.is_active === false;
 
                 return (
-                  <div key={bar.id} className="bg-slate-950 border border-slate-800 rounded-xl p-5 flex flex-col justify-between space-y-4 hover:border-purple-500/50 transition">
-                    <div>
-                      <div className="flex justify-between items-start mb-2">
-                        <h3 className="font-bold text-lg text-white">{bar.name}</h3>
-                        <span className="text-xs bg-purple-500/10 text-purple-400 px-2.5 py-1 rounded-full font-semibold">
-                          Activo
+                  <div 
+                    key={bar.id} 
+                    className={`border rounded-xl p-5 flex flex-col justify-between space-y-4 transition ${
+                      isInactive ? 'bg-slate-950/60 border-amber-900/30 opacity-80' : 'bg-slate-950 border-slate-800'
+                    }`}
+                  >
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-start">
+                        <h3 className={`font-bold text-lg ${isInactive ? 'text-slate-400 line-through' : 'text-white'}`}>
+                          {bar.name}
+                        </h3>
+                        <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${
+                          isInactive ? 'bg-amber-500/10 text-amber-400' : 'bg-purple-500/10 text-purple-400'
+                        }`}>
+                          {isInactive ? 'Inactivo' : 'Activo'}
                         </span>
                       </div>
-                      <p className="text-xs text-slate-400">
-                        📍 {bar.address || 'Sin dirección especificada'}
+                      <p className="text-xs text-slate-400">📍 {bar.address || 'Sin dirección'}</p>
+                      <p className="text-xs text-slate-400">📞 {bar.phone || 'Sin teléfono'}</p>
+                      <p className="text-xs font-mono px-2 py-1 rounded border inline-block text-purple-300 bg-purple-950/40 border-purple-900/50">
+                        slug: /{bar.slug}
                       </p>
                     </div>
 
-                    <div className="border-t border-slate-900 pt-3 flex justify-between items-center text-xs">
-                      <span className="text-slate-400">Personal en sucursal:</span>
-                      <span className="font-bold text-sky-400">{staffCount} empleados</span>
+                    <div className="border-t border-slate-900 pt-3 flex flex-col gap-2 text-xs">
+                      <div className="flex justify-between items-center">
+                        <span className="text-slate-400">Staff:</span>
+                        <button 
+                          onClick={() => setSelectedBarForStaff(bar)}
+                          className="font-bold text-sky-400 hover:underline bg-sky-950/40 px-2.5 py-1 rounded border border-sky-900/50"
+                        >
+                          {barStaff.length} empleados (Ver)
+                        </button>
+                      </div>
+
+                      <button
+                        onClick={() => { setManagingBar(bar); setConfirmDeactivate(false); }}
+                        className="w-full mt-2 font-semibold py-2 rounded-lg border transition text-center bg-purple-950/60 hover:bg-purple-900/60 text-purple-200 border-purple-800/60"
+                      >
+                        ⚙️ Administrar Sucursal
+                      </button>
                     </div>
                   </div>
                 );
@@ -222,71 +314,127 @@ export default function SuperAdminDashboard() {
           )}
         </div>
 
-        {/* MODAL PARA CREAR NUEVO BAR */}
+        {managingBar && (
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+            <div className="bg-slate-900 border border-slate-800 w-full max-w-md p-6 rounded-2xl shadow-2xl space-y-6">
+              <div className="flex justify-between items-center border-b border-slate-800 pb-3">
+                <div>
+                  <span className="text-xs text-purple-400 font-semibold uppercase">Gestión de Sucursal</span>
+                  <h3 className="text-xl font-bold text-white">{managingBar.name}</h3>
+                </div>
+                <button onClick={() => { setManagingBar(null); setConfirmDeactivate(false); }} className="text-slate-400 hover:text-white text-lg font-bold">✕</button>
+              </div>
+
+              {!confirmDeactivate ? (
+                <div className="space-y-4">
+                  <button
+                    onClick={() => { setSelectedBarForStaff(managingBar); setManagingBar(null); }}
+                    className="w-full bg-slate-800 hover:bg-slate-700 text-left px-4 py-3 rounded-xl text-sm font-medium transition flex justify-between items-center"
+                  >
+                    <span>👥 Ver y auditar personal</span>
+                    <span>→</span>
+                  </button>
+
+                  <div className="border-t border-slate-800 pt-4">
+                    {managingBar.is_active === false ? (
+                      <button
+                        disabled={submitting}
+                        onClick={() => handleUpdateBarStatus(managingBar.id, true)}
+                        className="w-full bg-emerald-950/40 hover:bg-emerald-900/50 border border-emerald-900/60 text-emerald-300 text-left px-4 py-3 rounded-xl text-sm font-medium transition"
+                      >
+                        🟢 Reactivar Sucursal
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => setConfirmDeactivate(true)}
+                        className="w-full bg-amber-950/40 hover:bg-amber-900/50 border border-amber-900/60 text-amber-300 text-left px-4 py-3 rounded-xl text-sm font-medium transition"
+                      >
+                        ⛔ Desactivar Sucursal
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4 bg-amber-950/20 border border-amber-900/40 p-4 rounded-xl">
+                  <h4 className="font-bold text-amber-200 text-sm">¿Deseas desactivar este bar?</h4>
+                  <div className="flex gap-3 pt-2">
+                    <button disabled={submitting} onClick={() => setConfirmDeactivate(false)} className="w-1/2 bg-slate-800 text-white py-2 rounded-lg text-xs">Cancelar</button>
+                    <button disabled={submitting} onClick={() => handleUpdateBarStatus(managingBar.id, false)} className="w-1/2 bg-amber-600 text-white font-bold py-2 rounded-lg text-xs">Sí, Desactivar</button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {selectedBarForStaff && (
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+            <div className="bg-slate-900 border border-slate-800 w-full max-w-lg p-6 rounded-2xl shadow-2xl space-y-5">
+              <div className="flex justify-between items-center border-b border-slate-800 pb-3">
+                <h3 className="text-xl font-bold text-white">Staff de {selectedBarForStaff.name}</h3>
+                <button onClick={() => setSelectedBarForStaff(null)} className="text-slate-400 hover:text-white text-lg font-bold">✕</button>
+              </div>
+
+              <div className="space-y-3 max-h-60 overflow-y-auto">
+                {profiles.filter(p => p.bar_id === selectedBarForStaff.id).length === 0 ? (
+                  <p className="text-xs text-slate-400 text-center py-6">Sin personal registrado.</p>
+                ) : (
+                  profiles.filter(p => p.bar_id === selectedBarForStaff.id).map((emp) => (
+                    <div key={emp.id} className="bg-slate-950 border border-slate-800 p-3 rounded-xl flex justify-between items-center text-xs">
+                      <div>
+                        <p className="font-bold text-white">{emp.full_name || 'Sin nombre'}</p>
+                        <span className="inline-block mt-1 px-2 py-0.5 rounded uppercase text-[10px] font-bold bg-purple-900/50 text-purple-300 border border-purple-700">
+                          {emp.role}
+                        </span>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+              <button onClick={() => setSelectedBarForStaff(null)} className="w-full bg-slate-800 hover:bg-slate-700 text-white font-medium py-2.5 rounded-xl text-sm transition">Cerrar</button>
+            </div>
+          </div>
+        )}
+
         {isCreatingBar && (
           <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
             <div className="bg-slate-900 border border-slate-800 w-full max-w-md p-6 rounded-2xl shadow-2xl space-y-5">
-              
               <div className="flex justify-between items-center border-b border-slate-800 pb-3">
-                <div>
-                  <span className="text-xs text-purple-400 font-semibold uppercase">Expansión</span>
-                  <h3 className="text-xl font-bold text-white">Registrar Nueva Sucursal</h3>
-                </div>
-                <button 
-                  onClick={() => setIsCreatingBar(false)}
-                  className="text-slate-400 hover:text-white text-lg font-bold"
-                >
-                  ✕
-                </button>
+                <h3 className="text-xl font-bold text-white">Nuevo Bar & Administrador</h3>
+                <button onClick={() => setIsCreatingBar(false)} className="text-slate-400 hover:text-white text-lg font-bold">✕</button>
               </div>
 
-              <form onSubmit={handleCreateBar} className="space-y-4">
+              <form onSubmit={handleCreateBarWithAdmin} className="space-y-4">
                 <div>
-                  <label className="block text-xs font-semibold uppercase text-slate-400 mb-1">
-                    Nombre del Bar / Sucursal
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="Ej: DiamondCode Bar Centro"
-                    value={newBarName}
-                    onChange={(e) => setNewBarName(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-purple-500 transition"
-                    autoFocus
-                  />
+                  <label className="block text-xs font-semibold uppercase text-slate-400 mb-1">Nombre del Administrador *</label>
+                  <input type="text" required placeholder="Ej: Carlos Pérez" value={adminName} onChange={(e) => setAdminName(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-purple-500 transition" />
                 </div>
-
                 <div>
-                  <label className="block text-xs font-semibold uppercase text-slate-400 mb-1">
-                    Dirección (Opcional)
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Ej: Av. Principal #123"
-                    value={newBarAddress}
-                    onChange={(e) => setNewBarAddress(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-purple-500 transition"
-                  />
+                  <label className="block text-xs font-semibold uppercase text-slate-400 mb-1">Nombre del Bar *</label>
+                  <input type="text" required placeholder="Ej: La Taberna" value={newBarName} onChange={(e) => setNewBarName(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-purple-500 transition" />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold uppercase text-slate-400 mb-1">Dirección (Opcional)</label>
+                  <input type="text" placeholder="Ej: Av. Juárez #405" value={newBarAddress} onChange={(e) => setNewBarAddress(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-purple-500 transition" />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold uppercase text-slate-400 mb-1">Teléfono (Opcional)</label>
+                  <input type="text" placeholder="Ej: 951 123 4567" value={newBarPhone} onChange={(e) => setNewBarPhone(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-purple-500 transition" />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold uppercase text-slate-400 mb-1">Correo del Admin *</label>
+                  <input type="email" required placeholder="admin@lataberna.com" value={adminEmail} onChange={(e) => setAdminEmail(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-purple-500 transition" />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold uppercase text-slate-400 mb-1">Contraseña *</label>
+                  <input type="password" required placeholder="••••••••" value={adminPassword} onChange={(e) => setAdminPassword(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-purple-500 transition" />
                 </div>
 
                 <div className="flex gap-3 pt-2">
-                  <button
-                    type="button"
-                    onClick={() => setIsCreatingBar(false)}
-                    className="w-1/2 bg-slate-800 hover:bg-slate-700 text-white font-medium py-3 rounded-xl text-sm transition"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={submitting}
-                    className="w-1/2 bg-purple-600 hover:bg-purple-500 text-white font-bold py-3 rounded-xl text-sm transition shadow-lg shadow-purple-600/20 disabled:opacity-50"
-                  >
-                    {submitting ? 'Guardando...' : 'Guardar Bar'}
-                  </button>
+                  <button type="button" onClick={() => setIsCreatingBar(false)} className="w-1/2 bg-slate-800 hover:bg-slate-700 text-white font-medium py-2.5 rounded-xl text-sm transition">Cancelar</button>
+                  <button type="submit" disabled={submitting} className="w-1/2 bg-purple-600 hover:bg-purple-500 text-white font-bold py-2.5 rounded-xl text-sm transition disabled:opacity-50">{submitting ? 'Creando...' : 'Crear'}</button>
                 </div>
               </form>
-
             </div>
           </div>
         )}
