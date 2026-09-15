@@ -51,8 +51,19 @@ export default function SuperAdminDashboard() {
 
   const supabase = createClient();
 
+  // 🎨 Paleta Diamond Code — Vibrante
+  const brand = {
+    cyan: '#3DB8C9',
+    cyanHover: '#4DD4E8',
+    steel: '#4A8FB0',
+    slate: '#3A5064',
+    slateDark: '#1E2833',
+    amber: '#F59E0B',
+    green: '#10B981',
+    greenBright: '#34D399',
+  };
+
   const loadSuperAdminData = async (userId: string) => {
-    // 1. Verificar rol con reintentos
     let profileData: { role: string } | null = null;
     let attempts = 0;
     const maxAttempts = 3;
@@ -78,7 +89,6 @@ export default function SuperAdminDashboard() {
       return;
     }
 
-    // 2. Cargar bares
     const { data: barsData, error: barsError } = await supabase
       .from('bars')
       .select('id, name, slug, address, phone, admin_phone, is_active, created_at, trial_until, subscription_status')
@@ -87,7 +97,6 @@ export default function SuperAdminDashboard() {
     if (!barsError && barsData) {
       setBars(barsData);
 
-      // 3. Calcular ingresos del mes por bar
       const revenues: Record<string, number> = {};
       const firstDayOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString();
 
@@ -112,7 +121,6 @@ export default function SuperAdminDashboard() {
       setBarRevenues(revenues);
     }
 
-    // 4. Cargar perfiles
     const { data: profilesData, error: profilesError } = await supabase
       .from('profiles')
       .select('id, full_name, role, bar_id');
@@ -158,15 +166,15 @@ export default function SuperAdminDashboard() {
   };
 
   const getTrialStatus = (bar: Bar) => {
-    if (!bar.trial_until) return { label: 'Sin trial', color: 'text-slate-400', days: -999 };
+    if (!bar.trial_until) return { label: 'Sin trial', color: '#5d7285', days: -999 };
 
     const now = new Date();
     const trialEnd = new Date(bar.trial_until);
     const diffDays = Math.ceil((trialEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
 
-    if (diffDays < 0) return { label: 'Expirado', color: 'text-red-400', days: diffDays };
-    if (diffDays <= 3) return { label: `${diffDays} días restantes`, color: 'text-amber-400', days: diffDays };
-    return { label: `${diffDays} días restantes`, color: 'text-emerald-400', days: diffDays };
+    if (diffDays < 0) return { label: 'Expirado', color: '#F87171', days: diffDays };
+    if (diffDays <= 3) return { label: `${diffDays} días restantes`, color: '#FBBF24', days: diffDays };
+    return { label: `${diffDays} días restantes`, color: brand.cyan, days: diffDays };
   };
 
   const handleCreateBarWithAdmin = async (e: React.FormEvent) => {
@@ -186,7 +194,7 @@ export default function SuperAdminDashboard() {
         .replace(/^-+|-+$/g, '');
 
       const trialUntil = new Date();
-      trialUntil.setDate(trialUntil.getDate() + 30);
+      trialUntil.setDate(trialUntil.getDate() + 15);
 
       const { data: barData, error: barError } = await supabase
         .from('bars')
@@ -215,7 +223,7 @@ export default function SuperAdminDashboard() {
       if (rpcError) throw new Error('Error en función SQL: ' + rpcError.message);
       if (rpcData && rpcData.success === false) throw new Error('No se pudo registrar el administrador.');
 
-      setAppAlert({ type: 'success', message: '¡Sucursal y Administrador creados con 30 días de prueba!' });
+      setAppAlert({ type: 'success', message: '¡Sucursal y Administrador creados con 15 días de prueba!' });
       setNewBarName('');
       setNewBarAddress('');
       setNewBarPhone('');
@@ -298,7 +306,7 @@ export default function SuperAdminDashboard() {
     }
 
     const message =
-      `Hola 👋 te contacto de *Diamond Code SaaS*.\n\n` +
+      `Hola 👋 te contacto de *Diamond Code POS*.\n\n` +
       `Tu bar *${bar.name}* está en período de prueba.\n` +
       (trial.days >= 0
         ? `⏳ Te quedan *${trial.days} días* de prueba.\n`
@@ -312,7 +320,15 @@ export default function SuperAdminDashboard() {
     setAppAlert({ type: 'success', message: `WhatsApp abierto con mensaje para ${bar.name}.` });
   };
 
-  if (loading) return <div className="p-8 text-white bg-slate-950 min-h-screen">Cargando panel maestro...</div>;
+  if (loading)
+    return (
+      <div
+        className="p-8 text-white min-h-screen flex items-center justify-center"
+        style={{ backgroundColor: '#000000' }}
+      >
+        Cargando panel maestro...
+      </div>
+    );
 
   const activeBarsList = bars.filter((b) => b.is_active === true || b.is_active === undefined);
   const inactiveBarsList = bars.filter((b) => b.is_active === false);
@@ -321,7 +337,15 @@ export default function SuperAdminDashboard() {
   const totalRevenue = Object.values(barRevenues).reduce((s, v) => s + v, 0);
 
   return (
-    <main className="min-h-screen bg-slate-950 text-white p-6 relative">
+    <main
+      className="min-h-screen text-white p-6 relative"
+      style={{
+        backgroundColor: '#000000',
+        backgroundImage: `radial-gradient(circle at 15% 10%, rgba(61,184,201,0.12) 0%, transparent 50%), 
+                          radial-gradient(circle at 85% 90%, rgba(16,185,129,0.10) 0%, transparent 50%),
+                          radial-gradient(circle at 50% 50%, rgba(74,143,176,0.06) 0%, transparent 70%)`,
+      }}
+    >
       {appAlert && (
         <div className="fixed top-6 right-6 z-50 animate-bounce">
           <div
@@ -344,75 +368,173 @@ export default function SuperAdminDashboard() {
       )}
 
       <div className="max-w-6xl mx-auto space-y-8">
-        <header className="flex justify-between items-center border-b border-slate-800 pb-5">
-          <div>
-            <span className="bg-purple-600 text-xs px-3 py-1 rounded-full font-bold uppercase tracking-wider">
-              Diamond Code SaaS
-            </span>
-            <h1 className="text-3xl font-black mt-2">Panel Maestro de Bares</h1>
+        <header
+          className="flex justify-between items-start pb-5 gap-4 flex-wrap border-b"
+          style={{ borderColor: 'rgba(61, 184, 201, 0.3)' }}
+        >
+          <div className="flex items-start gap-4 min-w-0">
+            {/* ISOTIPO */}
+            <div
+              className="w-16 h-16 rounded-2xl flex items-center justify-center shrink-0 border p-2 relative"
+              style={{
+                backgroundColor: '#FFFFFF',
+                borderColor: 'rgba(61, 184, 201, 0.5)',
+                boxShadow:
+                  '0 15px 35px -10px rgba(61, 184, 201, 0.7), 0 0 30px -5px rgba(61, 184, 201, 0.4)',
+              }}
+            >
+              <img
+                src="/logo.png"
+                alt="Diamond Code"
+                className="w-full h-full object-contain"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src =
+                    'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" fill="none" stroke="%233DB8C9" stroke-width="2.5"><path d="M10 4 L30 4 L36 14 L20 36 L4 14 Z"/><path d="M4 14 L36 14"/><path d="M10 4 L16 14 L20 36"/><path d="M30 4 L24 14 L20 36"/></svg>';
+                }}
+              />
+            </div>
+
+            <div className="min-w-0">
+              <span
+                className="text-xs px-3 py-1 rounded-full font-bold uppercase tracking-wider text-white"
+                style={{
+                  background: `linear-gradient(135deg, ${brand.cyan} 0%, ${brand.steel} 100%)`,
+                  boxShadow: '0 6px 15px -5px rgba(61, 184, 201, 0.6)',
+                }}
+              >
+                Diamond Code POS
+              </span>
+              <h1 className="text-3xl font-black mt-2">Panel Maestro</h1>
+              <p className="text-xs mt-1" style={{ color: '#8fa3b3' }}>
+                Gestión de sucursales y suscripciones
+              </p>
+            </div>
           </div>
-          <div className="flex gap-3">
+
+          <div className="flex gap-3 shrink-0">
             <button
               onClick={() => setIsCreatingBar(true)}
-              className="bg-purple-600 hover:bg-purple-500 text-white font-bold px-4 py-2.5 rounded-xl text-sm transition shadow-lg shadow-purple-600/20"
+              className="text-white font-bold px-4 py-2.5 rounded-xl text-sm transition shadow-lg"
+              style={{
+                background: `linear-gradient(135deg, ${brand.cyan} 0%, ${brand.steel} 100%)`,
+                boxShadow: '0 10px 25px -10px rgba(61, 184, 201, 0.7)',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = `linear-gradient(135deg, ${brand.cyanHover} 0%, ${brand.cyan} 100%)`
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = `linear-gradient(135deg, ${brand.cyan} 0%, ${brand.steel} 100%)`
+              }}
             >
               + Registrar Bar + Admin
             </button>
             <button
               onClick={handleLogout}
-              className="bg-slate-800 hover:bg-slate-700 px-4 py-2.5 rounded-xl text-sm font-medium transition"
+              className="px-4 py-2.5 rounded-xl text-sm font-medium transition border"
+              style={{
+                backgroundColor: brand.slateDark,
+                borderColor: 'rgba(61, 184, 201, 0.3)',
+                color: '#8fa3b3',
+              }}
             >
               Cerrar Sesión
             </button>
           </div>
         </header>
 
+        {/* MÉTRICAS */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl">
-            <h2 className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-1">Bares Activos</h2>
-            <p className="text-4xl font-black text-purple-400">{activeBarsList.length}</p>
+          <div
+            className="p-6 rounded-2xl shadow-xl border relative overflow-hidden"
+            style={{
+              backgroundColor: brand.slateDark,
+              borderColor: 'rgba(61, 184, 201, 0.3)',
+            }}
+          >
+            <h2
+              className="text-xs font-bold uppercase tracking-widest mb-1"
+              style={{ color: '#8fa3b3' }}
+            >
+              Bares Activos
+            </h2>
+            <p className="text-4xl font-black" style={{ color: brand.cyan }}>
+              {activeBarsList.length}
+            </p>
           </div>
-          <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl">
-            <h2 className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-1">Bares Inactivos</h2>
-            <p className="text-4xl font-black text-amber-400">{inactiveBarsList.length}</p>
+          <div
+            className="p-6 rounded-2xl shadow-xl border relative overflow-hidden"
+            style={{
+              backgroundColor: brand.slateDark,
+              borderColor: 'rgba(245, 158, 11, 0.3)',
+            }}
+          >
+            <h2
+              className="text-xs font-bold uppercase tracking-widest mb-1"
+              style={{ color: '#8fa3b3' }}
+            >
+              Bares Inactivos
+            </h2>
+            <p className="text-4xl font-black" style={{ color: brand.amber }}>
+              {inactiveBarsList.length}
+            </p>
           </div>
-          <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl">
-            <h2 className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-1">
+          <div
+            className="p-6 rounded-2xl shadow-xl border relative overflow-hidden"
+            style={{
+              backgroundColor: brand.slateDark,
+              borderColor: 'rgba(16, 185, 129, 0.3)',
+            }}
+          >
+            <h2
+              className="text-xs font-bold uppercase tracking-widest mb-1"
+              style={{ color: '#8fa3b3' }}
+            >
               Ingresos Totales (mes)
             </h2>
-            <p className="text-4xl font-black text-emerald-400">
+            <p className="text-4xl font-black" style={{ color: brand.greenBright }}>
               ${totalRevenue.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
             </p>
           </div>
         </div>
 
-        <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl space-y-6">
-          <div className="flex border-b border-slate-800 gap-4 pb-3">
+        {/* LISTA DE BARES */}
+        <div
+          className="p-6 rounded-2xl shadow-xl space-y-6 border"
+          style={{ backgroundColor: brand.slateDark, borderColor: 'rgba(61, 184, 201, 0.25)' }}
+        >
+          <div
+            className="flex gap-4 pb-3 border-b"
+            style={{ borderColor: 'rgba(61, 184, 201, 0.3)' }}
+          >
             <button
               onClick={() => setActiveTab('active')}
-              className={`pb-2 text-sm font-bold transition relative ${
-                activeTab === 'active'
-                  ? 'text-purple-400 border-b-2 border-purple-500'
-                  : 'text-slate-400 hover:text-white'
-              }`}
+              className="pb-2 text-sm font-bold transition relative"
+              style={{
+                color: activeTab === 'active' ? brand.cyan : '#8fa3b3',
+                borderBottom:
+                  activeTab === 'active' ? `2px solid ${brand.cyan}` : '2px solid transparent',
+              }}
             >
               🟢 Bares Activos ({activeBarsList.length})
             </button>
             <button
               onClick={() => setActiveTab('inactive')}
-              className={`pb-2 text-sm font-bold transition relative ${
-                activeTab === 'inactive'
-                  ? 'text-amber-400 border-b-2 border-amber-500'
-                  : 'text-slate-400 hover:text-white'
-              }`}
+              className="pb-2 text-sm font-bold transition relative"
+              style={{
+                color: activeTab === 'inactive' ? brand.amber : '#8fa3b3',
+                borderBottom:
+                  activeTab === 'inactive' ? `2px solid ${brand.amber}` : '2px solid transparent',
+              }}
             >
               ⛔ Bares Inactivos ({inactiveBarsList.length})
             </button>
           </div>
 
           {displayedBars.length === 0 ? (
-            <div className="text-center py-12 text-slate-500 text-sm">
-              {activeTab === 'active' ? 'No hay bares activos registrados.' : 'No hay ningún bar inactivo.'}
+            <div className="text-center py-12 text-sm" style={{ color: '#8fa3b3' }}>
+              {activeTab === 'active'
+                ? 'No hay bares activos registrados.'
+                : 'No hay ningún bar inactivo.'}
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -425,33 +547,46 @@ export default function SuperAdminDashboard() {
                 return (
                   <div
                     key={bar.id}
-                    className={`border rounded-xl p-5 flex flex-col justify-between space-y-4 transition ${
-                      isInactive
-                        ? 'bg-slate-950/60 border-amber-900/30 opacity-80'
-                        : 'bg-slate-950 border-slate-800'
-                    }`}
+                    className="rounded-xl p-5 flex flex-col justify-between space-y-4 transition border relative"
+                    style={{
+                      backgroundColor: isInactive ? 'rgba(0, 0, 0, 0.4)' : '#000000',
+                      borderColor: isInactive
+                        ? 'rgba(245, 158, 11, 0.3)'
+                        : 'rgba(61, 184, 201, 0.3)',
+                      opacity: isInactive ? 0.8 : 1,
+                    }}
                   >
                     <div className="space-y-2">
                       <div className="flex justify-between items-start">
                         <h3
                           className={`font-bold text-lg ${
-                            isInactive ? 'text-slate-400 line-through' : 'text-white'
+                            isInactive ? 'line-through' : 'text-white'
                           }`}
+                          style={{ color: isInactive ? '#5d7285' : '#FFFFFF' }}
                         >
                           {bar.name}
                         </h3>
                         <span
-                          className={`text-xs px-2.5 py-1 rounded-full font-semibold ${
-                            isInactive ? 'bg-amber-500/10 text-amber-400' : 'bg-purple-500/10 text-purple-400'
-                          }`}
+                          className="text-xs px-2.5 py-1 rounded-full font-semibold border"
+                          style={{
+                            backgroundColor: isInactive
+                              ? 'rgba(245, 158, 11, 0.15)'
+                              : 'rgba(61, 184, 201, 0.15)',
+                            color: isInactive ? brand.amber : brand.cyan,
+                            borderColor: isInactive
+                              ? 'rgba(245, 158, 11, 0.3)'
+                              : 'rgba(61, 184, 201, 0.3)',
+                          }}
                         >
                           {isInactive ? 'Inactivo' : 'Activo'}
                         </span>
                       </div>
 
                       <div className="flex items-center gap-2 text-xs flex-wrap">
-                        <span className="text-slate-500">Trial:</span>
-                        <span className={`font-bold ${trial.color}`}>{trial.label}</span>
+                        <span style={{ color: '#5d7285' }}>Trial:</span>
+                        <span className="font-bold" style={{ color: trial.color }}>
+                          {trial.label}
+                        </span>
                         {trial.days >= 0 && trial.days <= 3 && (
                           <span className="bg-amber-900/40 text-amber-300 px-1.5 py-0.5 rounded text-[10px] font-bold animate-pulse">
                             ¡POR VENCER!
@@ -465,25 +600,44 @@ export default function SuperAdminDashboard() {
                       </div>
 
                       <div className="flex items-center gap-2 text-xs">
-                        <span className="text-slate-500">Ingresos (mes):</span>
-                        <span className="font-bold text-emerald-400">
+                        <span style={{ color: '#5d7285' }}>Ingresos (mes):</span>
+                        <span className="font-bold" style={{ color: brand.greenBright }}>
                           ${revenue.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
                         </span>
                       </div>
 
-                      <p className="text-xs text-slate-400">📍 {bar.address || 'Sin dirección'}</p>
-                      <p className="text-xs text-slate-400">📞 {bar.phone || 'Sin teléfono'}</p>
-                      <p className="text-xs font-mono px-2 py-1 rounded border inline-block text-purple-300 bg-purple-950/40 border-purple-900/50">
+                      <p className="text-xs" style={{ color: '#8fa3b3' }}>
+                        📍 {bar.address || 'Sin dirección'}
+                      </p>
+                      <p className="text-xs" style={{ color: '#8fa3b3' }}>
+                        📞 {bar.phone || 'Sin teléfono'}
+                      </p>
+                      <p
+                        className="text-xs font-mono px-2 py-1 rounded border inline-block"
+                        style={{
+                          color: brand.cyan,
+                          backgroundColor: 'rgba(61, 184, 201, 0.1)',
+                          borderColor: 'rgba(61, 184, 201, 0.3)',
+                        }}
+                      >
                         slug: /{bar.slug}
                       </p>
                     </div>
 
-                    <div className="border-t border-slate-900 pt-3 flex flex-col gap-2 text-xs">
+                    <div
+                      className="pt-3 flex flex-col gap-2 text-xs border-t"
+                      style={{ borderColor: 'rgba(61, 184, 201, 0.2)' }}
+                    >
                       <div className="flex justify-between items-center">
-                        <span className="text-slate-400">Staff:</span>
+                        <span style={{ color: '#8fa3b3' }}>Staff:</span>
                         <button
                           onClick={() => setSelectedBarForStaff(bar)}
-                          className="font-bold text-sky-400 hover:underline bg-sky-950/40 px-2.5 py-1 rounded border border-sky-900/50"
+                          className="font-bold px-2.5 py-1 rounded border transition"
+                          style={{
+                            color: brand.cyan,
+                            backgroundColor: 'rgba(61, 184, 201, 0.1)',
+                            borderColor: 'rgba(61, 184, 201, 0.3)',
+                          }}
                         >
                           {barStaff.length} empleados (Ver)
                         </button>
@@ -491,7 +645,12 @@ export default function SuperAdminDashboard() {
 
                       <button
                         onClick={() => handleSendWhatsApp(bar)}
-                        className="w-full mt-1 font-semibold py-2 rounded-lg border transition text-center bg-green-950/60 hover:bg-green-900/60 text-green-300 border-green-800/60"
+                        className="w-full mt-1 font-semibold py-2 rounded-lg border transition text-center"
+                        style={{
+                          backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                          color: brand.greenBright,
+                          borderColor: 'rgba(16, 185, 129, 0.35)',
+                        }}
                       >
                         📱 Recordar Pago (WhatsApp)
                       </button>
@@ -505,7 +664,12 @@ export default function SuperAdminDashboard() {
                               : ''
                           );
                         }}
-                        className="w-full font-semibold py-2 rounded-lg border transition text-center bg-sky-950/60 hover:bg-sky-900/60 text-sky-200 border-sky-800/60"
+                        className="w-full font-semibold py-2 rounded-lg border transition text-center"
+                        style={{
+                          backgroundColor: 'rgba(61, 184, 201, 0.1)',
+                          color: brand.cyan,
+                          borderColor: 'rgba(61, 184, 201, 0.3)',
+                        }}
                       >
                         🗓️ Editar Trial
                       </button>
@@ -515,7 +679,12 @@ export default function SuperAdminDashboard() {
                           setManagingBar(bar);
                           setConfirmDeactivate(false);
                         }}
-                        className="w-full font-semibold py-2 rounded-lg border transition text-center bg-purple-950/60 hover:bg-purple-900/60 text-purple-200 border-purple-800/60"
+                        className="w-full font-semibold py-2 rounded-lg border transition text-center"
+                        style={{
+                          backgroundColor: 'rgba(74, 143, 176, 0.1)',
+                          color: '#8fa3b3',
+                          borderColor: 'rgba(74, 143, 176, 0.3)',
+                        }}
                       >
                         ⚙️ Administrar Sucursal
                       </button>
@@ -530,12 +699,25 @@ export default function SuperAdminDashboard() {
         {/* MODAL: Editar trial */}
         {editingTrialBar && (
           <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-            <div className="bg-slate-900 border border-slate-800 w-full max-w-md p-6 rounded-2xl shadow-2xl space-y-5">
-              <div className="flex justify-between items-center border-b border-slate-800 pb-3">
-                <h3 className="text-lg font-bold text-white">Editar Trial: {editingTrialBar.name}</h3>
+            <div
+              className="w-full max-w-md p-6 rounded-2xl shadow-2xl space-y-5 border"
+              style={{
+                backgroundColor: brand.slateDark,
+                borderColor: 'rgba(61, 184, 201, 0.4)',
+                boxShadow: '0 25px 60px -20px rgba(61, 184, 201, 0.4)',
+              }}
+            >
+              <div
+                className="flex justify-between items-center pb-3 border-b"
+                style={{ borderColor: 'rgba(61, 184, 201, 0.3)' }}
+              >
+                <h3 className="text-lg font-bold text-white">
+                  Editar Trial: {editingTrialBar.name}
+                </h3>
                 <button
                   onClick={() => setEditingTrialBar(null)}
-                  className="text-slate-400 hover:text-white text-lg font-bold"
+                  className="text-lg font-bold hover:text-white"
+                  style={{ color: '#8fa3b3' }}
                 >
                   ✕
                 </button>
@@ -543,7 +725,10 @@ export default function SuperAdminDashboard() {
 
               <form onSubmit={handleUpdateTrial} className="space-y-4">
                 <div>
-                  <label className="block text-xs font-semibold uppercase text-slate-400 mb-1">
+                  <label
+                    className="block text-xs font-semibold uppercase mb-1"
+                    style={{ color: '#8fa3b3' }}
+                  >
                     Nueva fecha de fin de prueba
                   </label>
                   <input
@@ -551,21 +736,61 @@ export default function SuperAdminDashboard() {
                     required
                     value={newTrialDate}
                     onChange={(e) => setNewTrialDate(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-sky-500"
+                    className="w-full rounded-xl px-4 py-3 text-white text-sm focus:outline-none border"
+                    style={{ backgroundColor: '#000000', borderColor: 'rgba(61, 184, 201, 0.3)' }}
                   />
                 </div>
+
+                <div
+                  className="rounded-xl p-3 text-xs space-y-1 border"
+                  style={{ backgroundColor: '#000000', borderColor: 'rgba(61, 184, 201, 0.3)' }}
+                >
+                  <p className="font-semibold" style={{ color: '#8fa3b3' }}>
+                    Atajos rápidos:
+                  </p>
+                  <div className="flex gap-2 flex-wrap pt-1">
+                    {[7, 15, 30, 60, 90].map((days) => (
+                      <button
+                        key={days}
+                        type="button"
+                        onClick={() => {
+                          const d = new Date();
+                          d.setDate(d.getDate() + days);
+                          setNewTrialDate(d.toISOString().split('T')[0]);
+                        }}
+                        className="px-2.5 py-1 rounded border text-[11px] font-semibold transition"
+                        style={{
+                          backgroundColor: 'rgba(61, 184, 201, 0.15)',
+                          color: brand.cyan,
+                          borderColor: 'rgba(61, 184, 201, 0.3)',
+                        }}
+                      >
+                        +{days} días
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
                 <div className="flex gap-3">
                   <button
                     type="button"
                     onClick={() => setEditingTrialBar(null)}
-                    className="w-1/2 bg-slate-800 hover:bg-slate-700 text-white font-medium py-2.5 rounded-xl text-sm"
+                    className="w-1/2 font-medium py-2.5 rounded-xl text-sm border"
+                    style={{
+                      backgroundColor: 'rgba(0, 0, 0, 0.3)',
+                      borderColor: 'rgba(61, 184, 201, 0.3)',
+                      color: '#8fa3b3',
+                    }}
                   >
                     Cancelar
                   </button>
                   <button
                     type="submit"
                     disabled={submitting}
-                    className="w-1/2 bg-sky-600 hover:bg-sky-500 text-white font-bold py-2.5 rounded-xl text-sm disabled:opacity-50"
+                    className="w-1/2 text-white font-bold py-2.5 rounded-xl text-sm disabled:opacity-50"
+                    style={{
+                      background: `linear-gradient(135deg, ${brand.cyan} 0%, ${brand.steel} 100%)`,
+                    }}
                   >
                     {submitting ? 'Guardando...' : 'Guardar'}
                   </button>
@@ -578,10 +803,22 @@ export default function SuperAdminDashboard() {
         {/* MODAL: Administrar sucursal */}
         {managingBar && (
           <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-            <div className="bg-slate-900 border border-slate-800 w-full max-w-md p-6 rounded-2xl shadow-2xl space-y-6">
-              <div className="flex justify-between items-center border-b border-slate-800 pb-3">
+            <div
+              className="w-full max-w-md p-6 rounded-2xl shadow-2xl space-y-6 border"
+              style={{
+                backgroundColor: brand.slateDark,
+                borderColor: 'rgba(61, 184, 201, 0.4)',
+                boxShadow: '0 25px 60px -20px rgba(61, 184, 201, 0.4)',
+              }}
+            >
+              <div
+                className="flex justify-between items-center pb-3 border-b"
+                style={{ borderColor: 'rgba(61, 184, 201, 0.3)' }}
+              >
                 <div>
-                  <span className="text-xs text-purple-400 font-semibold uppercase">Gestión de Sucursal</span>
+                  <span className="text-xs font-semibold uppercase" style={{ color: brand.cyan }}>
+                    Gestión de Sucursal
+                  </span>
                   <h3 className="text-xl font-bold text-white">{managingBar.name}</h3>
                 </div>
                 <button
@@ -589,7 +826,8 @@ export default function SuperAdminDashboard() {
                     setManagingBar(null);
                     setConfirmDeactivate(false);
                   }}
-                  className="text-slate-400 hover:text-white text-lg font-bold"
+                  className="text-lg font-bold hover:text-white"
+                  style={{ color: '#8fa3b3' }}
                 >
                   ✕
                 </button>
@@ -602,13 +840,18 @@ export default function SuperAdminDashboard() {
                       setSelectedBarForStaff(managingBar);
                       setManagingBar(null);
                     }}
-                    className="w-full bg-slate-800 hover:bg-slate-700 text-left px-4 py-3 rounded-xl text-sm font-medium transition flex justify-between items-center"
+                    className="w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition flex justify-between items-center border"
+                    style={{
+                      backgroundColor: 'rgba(0, 0, 0, 0.3)',
+                      borderColor: 'rgba(61, 184, 201, 0.3)',
+                      color: '#FFFFFF',
+                    }}
                   >
                     <span>👥 Ver y auditar personal</span>
                     <span>→</span>
                   </button>
 
-                  <div className="border-t border-slate-800 pt-4">
+                  <div className="pt-4 border-t" style={{ borderColor: 'rgba(61, 184, 201, 0.3)' }}>
                     {managingBar.is_active === false ? (
                       <button
                         disabled={submitting}
@@ -655,12 +898,25 @@ export default function SuperAdminDashboard() {
         {/* MODAL: Staff del bar */}
         {selectedBarForStaff && (
           <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-            <div className="bg-slate-900 border border-slate-800 w-full max-w-lg p-6 rounded-2xl shadow-2xl space-y-5">
-              <div className="flex justify-between items-center border-b border-slate-800 pb-3">
-                <h3 className="text-xl font-bold text-white">Staff de {selectedBarForStaff.name}</h3>
+            <div
+              className="w-full max-w-lg p-6 rounded-2xl shadow-2xl space-y-5 border"
+              style={{
+                backgroundColor: brand.slateDark,
+                borderColor: 'rgba(61, 184, 201, 0.4)',
+                boxShadow: '0 25px 60px -20px rgba(61, 184, 201, 0.4)',
+              }}
+            >
+              <div
+                className="flex justify-between items-center pb-3 border-b"
+                style={{ borderColor: 'rgba(61, 184, 201, 0.3)' }}
+              >
+                <h3 className="text-xl font-bold text-white">
+                  Staff de {selectedBarForStaff.name}
+                </h3>
                 <button
                   onClick={() => setSelectedBarForStaff(null)}
-                  className="text-slate-400 hover:text-white text-lg font-bold"
+                  className="text-lg font-bold hover:text-white"
+                  style={{ color: '#8fa3b3' }}
                 >
                   ✕
                 </button>
@@ -668,18 +924,31 @@ export default function SuperAdminDashboard() {
 
               <div className="space-y-3 max-h-60 overflow-y-auto">
                 {profiles.filter((p) => p.bar_id === selectedBarForStaff.id).length === 0 ? (
-                  <p className="text-xs text-slate-400 text-center py-6">Sin personal registrado.</p>
+                  <p className="text-xs text-center py-6" style={{ color: '#8fa3b3' }}>
+                    Sin personal registrado.
+                  </p>
                 ) : (
                   profiles
                     .filter((p) => p.bar_id === selectedBarForStaff.id)
                     .map((emp) => (
                       <div
                         key={emp.id}
-                        className="bg-slate-950 border border-slate-800 p-3 rounded-xl flex justify-between items-center text-xs"
+                        className="p-3 rounded-xl flex justify-between items-center text-xs border"
+                        style={{
+                          backgroundColor: '#000000',
+                          borderColor: 'rgba(61, 184, 201, 0.3)',
+                        }}
                       >
                         <div>
                           <p className="font-bold text-white">{emp.full_name || 'Sin nombre'}</p>
-                          <span className="inline-block mt-1 px-2 py-0.5 rounded uppercase text-[10px] font-bold bg-purple-900/50 text-purple-300 border border-purple-700">
+                          <span
+                            className="inline-block mt-1 px-2 py-0.5 rounded uppercase text-[10px] font-bold border"
+                            style={{
+                              backgroundColor: 'rgba(61, 184, 201, 0.15)',
+                              color: brand.cyan,
+                              borderColor: 'rgba(61, 184, 201, 0.3)',
+                            }}
+                          >
                             {emp.role}
                           </span>
                         </div>
@@ -689,7 +958,12 @@ export default function SuperAdminDashboard() {
               </div>
               <button
                 onClick={() => setSelectedBarForStaff(null)}
-                className="w-full bg-slate-800 hover:bg-slate-700 text-white font-medium py-2.5 rounded-xl text-sm transition"
+                className="w-full font-medium py-2.5 rounded-xl text-sm transition border"
+                style={{
+                  backgroundColor: 'rgba(0, 0, 0, 0.3)',
+                  borderColor: 'rgba(61, 184, 201, 0.3)',
+                  color: '#8fa3b3',
+                }}
               >
                 Cerrar
               </button>
@@ -700,20 +974,45 @@ export default function SuperAdminDashboard() {
         {/* MODAL: Crear bar + admin */}
         {isCreatingBar && (
           <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-            <div className="bg-slate-900 border border-slate-800 w-full max-w-md p-6 rounded-2xl shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto">
-              <div className="flex justify-between items-center border-b border-slate-800 pb-3">
+            <div
+              className="w-full max-w-md p-6 rounded-2xl shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto border"
+              style={{
+                backgroundColor: brand.slateDark,
+                borderColor: 'rgba(61, 184, 201, 0.4)',
+                boxShadow: '0 25px 60px -20px rgba(61, 184, 201, 0.4)',
+              }}
+            >
+              <div
+                className="flex justify-between items-center pb-3 border-b"
+                style={{ borderColor: 'rgba(61, 184, 201, 0.3)' }}
+              >
                 <h3 className="text-xl font-bold text-white">Nuevo Bar & Administrador</h3>
                 <button
                   onClick={() => setIsCreatingBar(false)}
-                  className="text-slate-400 hover:text-white text-lg font-bold"
+                  className="text-lg font-bold hover:text-white"
+                  style={{ color: '#8fa3b3' }}
                 >
                   ✕
                 </button>
               </div>
 
+              <div
+                className="rounded-xl p-3 text-xs border"
+                style={{
+                  backgroundColor: 'rgba(61, 184, 201, 0.1)',
+                  borderColor: 'rgba(61, 184, 201, 0.35)',
+                  color: brand.cyan,
+                }}
+              >
+                🎁 Se otorgarán <strong>15 días de prueba gratuita</strong> al registrar este bar.
+              </div>
+
               <form onSubmit={handleCreateBarWithAdmin} className="space-y-4">
                 <div>
-                  <label className="block text-xs font-semibold uppercase text-slate-400 mb-1">
+                  <label
+                    className="block text-xs font-semibold uppercase mb-1"
+                    style={{ color: '#8fa3b3' }}
+                  >
                     Nombre del Administrador *
                   </label>
                   <input
@@ -722,11 +1021,15 @@ export default function SuperAdminDashboard() {
                     placeholder="Ej: Carlos Pérez"
                     value={adminName}
                     onChange={(e) => setAdminName(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-purple-500"
+                    className="w-full rounded-xl px-4 py-3 text-white text-sm focus:outline-none border"
+                    style={{ backgroundColor: '#000000', borderColor: 'rgba(61, 184, 201, 0.3)' }}
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold uppercase text-slate-400 mb-1">
+                  <label
+                    className="block text-xs font-semibold uppercase mb-1"
+                    style={{ color: '#8fa3b3' }}
+                  >
                     Nombre del Bar *
                   </label>
                   <input
@@ -735,11 +1038,15 @@ export default function SuperAdminDashboard() {
                     placeholder="Ej: La Taberna"
                     value={newBarName}
                     onChange={(e) => setNewBarName(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-purple-500"
+                    className="w-full rounded-xl px-4 py-3 text-white text-sm focus:outline-none border"
+                    style={{ backgroundColor: '#000000', borderColor: 'rgba(61, 184, 201, 0.3)' }}
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold uppercase text-slate-400 mb-1">
+                  <label
+                    className="block text-xs font-semibold uppercase mb-1"
+                    style={{ color: '#8fa3b3' }}
+                  >
                     Dirección (Opcional)
                   </label>
                   <input
@@ -747,11 +1054,15 @@ export default function SuperAdminDashboard() {
                     placeholder="Ej: Av. Juárez #405"
                     value={newBarAddress}
                     onChange={(e) => setNewBarAddress(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-purple-500"
+                    className="w-full rounded-xl px-4 py-3 text-white text-sm focus:outline-none border"
+                    style={{ backgroundColor: '#000000', borderColor: 'rgba(61, 184, 201, 0.3)' }}
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold uppercase text-slate-400 mb-1">
+                  <label
+                    className="block text-xs font-semibold uppercase mb-1"
+                    style={{ color: '#8fa3b3' }}
+                  >
                     Teléfono del Bar (Opcional)
                   </label>
                   <input
@@ -759,11 +1070,15 @@ export default function SuperAdminDashboard() {
                     placeholder="Ej: 951 123 4567"
                     value={newBarPhone}
                     onChange={(e) => setNewBarPhone(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-purple-500"
+                    className="w-full rounded-xl px-4 py-3 text-white text-sm focus:outline-none border"
+                    style={{ backgroundColor: '#000000', borderColor: 'rgba(61, 184, 201, 0.3)' }}
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold uppercase text-slate-400 mb-1">
+                  <label
+                    className="block text-xs font-semibold uppercase mb-1"
+                    style={{ color: '#8fa3b3' }}
+                  >
                     WhatsApp del Admin (Opcional)
                   </label>
                   <input
@@ -771,11 +1086,15 @@ export default function SuperAdminDashboard() {
                     placeholder="Ej: 5219511234567"
                     value={adminPhone}
                     onChange={(e) => setAdminPhone(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-purple-500"
+                    className="w-full rounded-xl px-4 py-3 text-white text-sm focus:outline-none border"
+                    style={{ backgroundColor: '#000000', borderColor: 'rgba(61, 184, 201, 0.3)' }}
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold uppercase text-slate-400 mb-1">
+                  <label
+                    className="block text-xs font-semibold uppercase mb-1"
+                    style={{ color: '#8fa3b3' }}
+                  >
                     Correo del Admin *
                   </label>
                   <input
@@ -784,11 +1103,15 @@ export default function SuperAdminDashboard() {
                     placeholder="admin@lataberna.com"
                     value={adminEmail}
                     onChange={(e) => setAdminEmail(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-purple-500"
+                    className="w-full rounded-xl px-4 py-3 text-white text-sm focus:outline-none border"
+                    style={{ backgroundColor: '#000000', borderColor: 'rgba(61, 184, 201, 0.3)' }}
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold uppercase text-slate-400 mb-1">
+                  <label
+                    className="block text-xs font-semibold uppercase mb-1"
+                    style={{ color: '#8fa3b3' }}
+                  >
                     Contraseña *
                   </label>
                   <input
@@ -797,7 +1120,8 @@ export default function SuperAdminDashboard() {
                     placeholder="••••••••"
                     value={adminPassword}
                     onChange={(e) => setAdminPassword(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-purple-500"
+                    className="w-full rounded-xl px-4 py-3 text-white text-sm focus:outline-none border"
+                    style={{ backgroundColor: '#000000', borderColor: 'rgba(61, 184, 201, 0.3)' }}
                   />
                 </div>
 
@@ -805,14 +1129,22 @@ export default function SuperAdminDashboard() {
                   <button
                     type="button"
                     onClick={() => setIsCreatingBar(false)}
-                    className="w-1/2 bg-slate-800 hover:bg-slate-700 text-white font-medium py-2.5 rounded-xl text-sm transition"
+                    className="w-1/2 font-medium py-2.5 rounded-xl text-sm transition border"
+                    style={{
+                      backgroundColor: 'rgba(0, 0, 0, 0.3)',
+                      borderColor: 'rgba(61, 184, 201, 0.3)',
+                      color: '#8fa3b3',
+                    }}
                   >
                     Cancelar
                   </button>
                   <button
                     type="submit"
                     disabled={submitting}
-                    className="w-1/2 bg-purple-600 hover:bg-purple-500 text-white font-bold py-2.5 rounded-xl text-sm transition disabled:opacity-50"
+                    className="w-1/2 text-white font-bold py-2.5 rounded-xl text-sm transition disabled:opacity-50"
+                    style={{
+                      background: `linear-gradient(135deg, ${brand.cyan} 0%, ${brand.steel} 100%)`,
+                    }}
                   >
                     {submitting ? 'Creando...' : 'Crear'}
                   </button>

@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase'
+import Image from 'next/image'
 
 export default function LoginPage() {
   const supabase = createClient()
@@ -56,8 +57,7 @@ export default function LoginPage() {
 
     const role = profile.role.trim().toLowerCase()
 
-    // 4. Redirigir con recarga completa (window.location.href)
-    //    en vez de router.push para limpiar todo el estado en memoria
+    // 4. Redirigir con recarga completa para limpiar estado
     if (role === 'super_admin') {
       window.location.href = '/super-admin'
     } else if (role === 'admin') {
@@ -75,36 +75,124 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="min-h-screen bg-gray-950 text-white flex items-center justify-center p-6">
-      <div className="w-full max-w-md bg-gray-900 border border-gray-800 p-8 rounded-2xl shadow-xl">
+    <main
+      className="min-h-screen text-white flex items-center justify-center p-6 relative overflow-hidden"
+      style={{
+        backgroundColor: '#000000',
+        backgroundImage:
+          'radial-gradient(circle at 20% 20%, rgba(41,140,154,0.15) 0%, transparent 50%), radial-gradient(circle at 80% 80%, rgba(48,108,137,0.15) 0%, transparent 50%)',
+      }}
+    >
+      <div
+        className="w-full max-w-md p-8 rounded-3xl shadow-2xl relative z-10 border"
+        style={{
+          backgroundColor: 'rgba(40, 58, 75, 0.6)',
+          borderColor: 'rgba(41, 140, 154, 0.3)',
+          backdropFilter: 'blur(20px)',
+        }}
+      >
+        {/* LOGO / ISOTIPO */}
         <div className="text-center mb-8">
-          <h1 className="text-2xl font-black text-blue-500 mb-1">BarSaaS PWA</h1>
-          <p className="text-sm text-gray-400">Inicia sesión para acceder a tu panel</p>
+          <div className="flex justify-center mb-5">
+            <div
+              className="w-24 h-24 rounded-3xl flex items-center justify-center overflow-hidden p-3 border"
+              style={{
+                backgroundColor: '#FFFFFF',
+                boxShadow: '0 20px 40px -10px rgba(41, 140, 154, 0.5)',
+                borderColor: 'rgba(41, 140, 154, 0.3)',
+              }}
+            >
+              {/* 👇 TU LOGO 👇 */}
+              <Image
+                src="/logo.png"
+                alt="Diamond Code"
+                width={96}
+                height={96}
+                className="object-contain w-full h-full"
+                priority
+              />
+
+              {/* ⚠️ Si aún no tienes el archivo /logo.png,
+                  comenta el <Image /> de arriba y descomenta este SVG temporal: */}
+              {/*
+              <svg
+                viewBox="0 0 40 40"
+                className="w-14 h-14"
+                fill="none"
+                stroke="#298C9A"
+                strokeWidth="2.5"
+                strokeLinejoin="round"
+                strokeLinecap="round"
+              >
+                <path d="M10 4 L30 4 L36 14 L20 36 L4 14 Z" />
+                <path d="M4 14 L36 14" />
+                <path d="M10 4 L16 14 L20 36" />
+                <path d="M30 4 L24 14 L20 36" />
+              </svg>
+              */}
+            </div>
+          </div>
+
+          <h1 className="text-3xl font-black tracking-tight text-white">
+            Diamond Code{' '}
+            <span
+              className="bg-clip-text text-transparent"
+              style={{
+                backgroundImage: 'linear-gradient(135deg, #298C9A 0%, #306C89 100%)',
+              }}
+            >
+              POS
+            </span>
+          </h1>
+          <p className="text-sm mt-2" style={{ color: '#8fa3b3' }}>
+            Sistema de punto de venta para bares y restaurantes
+          </p>
         </div>
 
-        <form onSubmit={handleLogin} className="space-y-4">
+        {/* FORMULARIO */}
+        <form onSubmit={handleLogin} className="space-y-5">
           <div>
-            <label className="block text-xs font-semibold uppercase text-gray-400 mb-1">
+            <label
+              className="block text-xs font-semibold uppercase mb-2 tracking-wider"
+              style={{ color: '#8fa3b3' }}
+            >
               Correo electrónico
             </label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500 transition"
+              placeholder="tu@correo.com"
+              className="w-full rounded-xl px-4 py-3 text-white placeholder-slate-600 focus:outline-none transition border"
+              style={{
+                backgroundColor: 'rgba(0, 0, 0, 0.4)',
+                borderColor: 'rgba(48, 108, 137, 0.4)',
+              }}
+              onFocus={(e) => (e.target.style.borderColor = '#298C9A')}
+              onBlur={(e) => (e.target.style.borderColor = 'rgba(48, 108, 137, 0.4)')}
               required
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold uppercase text-gray-400 mb-1">
+            <label
+              className="block text-xs font-semibold uppercase mb-2 tracking-wider"
+              style={{ color: '#8fa3b3' }}
+            >
               Contraseña
             </label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500 transition"
+              placeholder="••••••••"
+              className="w-full rounded-xl px-4 py-3 text-white placeholder-slate-600 focus:outline-none transition border"
+              style={{
+                backgroundColor: 'rgba(0, 0, 0, 0.4)',
+                borderColor: 'rgba(48, 108, 137, 0.4)',
+              }}
+              onFocus={(e) => (e.target.style.borderColor = '#298C9A')}
+              onBlur={(e) => (e.target.style.borderColor = 'rgba(48, 108, 137, 0.4)')}
               required
             />
           </div>
@@ -118,11 +206,25 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl transition shadow-lg shadow-blue-600/30 disabled:opacity-50"
+            className="w-full font-bold py-3.5 rounded-xl transition text-white shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+            style={{
+              background: 'linear-gradient(135deg, #298C9A 0%, #306C89 100%)',
+              boxShadow: '0 10px 30px -10px rgba(41, 140, 154, 0.5)',
+            }}
           >
             {loading ? 'Entrando...' : 'Iniciar Sesión'}
           </button>
         </form>
+
+        {/* FOOTER */}
+        <div
+          className="mt-8 pt-6 border-t text-center"
+          style={{ borderColor: 'rgba(48, 108, 137, 0.3)' }}
+        >
+          <p className="text-xs" style={{ color: '#5d7285' }}>
+            © {new Date().getFullYear()} Diamond Code · Todos los derechos reservados
+          </p>
+        </div>
       </div>
     </main>
   )

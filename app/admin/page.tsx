@@ -107,7 +107,7 @@ export default function AdminDashboard() {
   const [tableLoading, setTableLoading] = useState(false);
   const [editingTable, setEditingTable] = useState<Table | null>(null);
 
-  // Análisis de ganancias por rango
+  // Análisis
   const [rangeOption, setRangeOption] = useState<RangeOption>('thisMonth');
   const [customStart, setCustomStart] = useState('');
   const [customEnd, setCustomEnd] = useState('');
@@ -130,6 +130,18 @@ export default function AdminDashboard() {
 
   const router = useRouter();
   const supabase = createClient();
+
+  // 🎨 Paleta Diamond Code — Vibrante
+  const brand = {
+    cyan: '#3DB8C9',
+    cyanHover: '#4DD4E8',
+    steel: '#4A8FB0',
+    slate: '#3A5064',
+    slateDark: '#1E2833',
+    amber: '#F59E0B',
+    green: '#10B981',
+    greenBright: '#34D399',
+  };
 
   const loadAdminData = async () => {
     const {
@@ -158,7 +170,6 @@ export default function AdminDashboard() {
     const barId = profileData.bar_id;
     setCurrentBarId(barId);
 
-    // 0.5. Cargar info del bar
     const { data: barData } = await supabase
       .from('bars')
       .select('id, name, slug, address, phone, trial_until, subscription_status')
@@ -167,7 +178,6 @@ export default function AdminDashboard() {
 
     if (barData) setBarInfo(barData as BarInfo);
 
-    // 1. Productos
     const { data: productsData } = await supabase
       .from('products')
       .select('*')
@@ -179,7 +189,6 @@ export default function AdminDashboard() {
       setProductsMap(new Map(productsData.map((p) => [p.id, p.name])));
     }
 
-    // 2. Órdenes
     const { data: ordersData, error: ordersError } = await supabase
       .from('orders')
       .select(`
@@ -221,7 +230,6 @@ export default function AdminDashboard() {
       setOrders(ordersData as Order[]);
     }
 
-    // 3. Empleados
     const { data: profilesData } = await supabase
       .from('profiles')
       .select('*')
@@ -229,7 +237,6 @@ export default function AdminDashboard() {
 
     if (profilesData) setEmployees(profilesData as Employee[]);
 
-    // 3.5. Mesas (solo las no eliminadas)
     const { data: tablesData } = await supabase
       .from('tables')
       .select('*')
@@ -239,7 +246,6 @@ export default function AdminDashboard() {
 
     if (tablesData) setTablesList(tablesData as Table[]);
 
-    // 4. Análisis del rango actual
     await loadRangeData(barId, rangeOption);
 
     setLoading(false);
@@ -708,7 +714,10 @@ export default function AdminDashboard() {
 
   if (loading)
     return (
-      <div className="p-8 text-white bg-slate-900 min-h-screen">
+      <div
+        className="p-8 text-white min-h-screen flex items-center justify-center"
+        style={{ backgroundColor: '#000000' }}
+      >
         Cargando panel de administrador...
       </div>
     );
@@ -752,7 +761,14 @@ export default function AdminDashboard() {
   ];
 
   return (
-    <main className="min-h-screen bg-slate-900 text-white p-6 relative">
+    <main
+      className="min-h-screen text-white p-6 relative"
+      style={{
+        backgroundColor: '#000000',
+        backgroundImage: `radial-gradient(circle at 15% 10%, rgba(61,184,201,0.10) 0%, transparent 50%), 
+                          radial-gradient(circle at 85% 90%, rgba(16,185,129,0.08) 0%, transparent 50%)`,
+      }}
+    >
       {alertInfo && (
         <div className="fixed top-6 right-6 z-50 animate-bounce">
           <div
@@ -778,35 +794,75 @@ export default function AdminDashboard() {
 
       <div className="max-w-6xl mx-auto">
         {/* HEADER */}
-        <header className="flex justify-between items-start mb-8 border-b border-slate-800 pb-4 gap-4 flex-wrap">
-          <div className="min-w-0">
-            <span className="bg-purple-600 text-xs px-2.5 py-1 rounded-full font-semibold uppercase">
-              Admin - Sucursal
-            </span>
-            <h1 className="text-3xl font-bold mt-1 truncate">
-              {barInfo?.name || 'Panel de Control'}
-            </h1>
-            {barInfo && (
-              <div className="flex flex-wrap items-center gap-3 mt-2 text-xs text-slate-400">
-                {barInfo.slug && (
-                  <span className="font-mono bg-slate-800 px-2 py-0.5 rounded border border-slate-700">
-                    /{barInfo.slug}
-                  </span>
-                )}
-                {barInfo.address && <span>📍 {barInfo.address}</span>}
-                {barInfo.phone && <span>📞 {barInfo.phone}</span>}
-              </div>
-            )}
+        <header
+          className="flex justify-between items-start mb-8 pb-4 gap-4 flex-wrap border-b"
+          style={{ borderColor: 'rgba(61, 184, 201, 0.3)' }}
+        >
+          <div className="flex items-start gap-4 min-w-0">
+            <div
+              className="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 border p-2"
+              style={{
+                backgroundColor: '#FFFFFF',
+                borderColor: 'rgba(61, 184, 201, 0.4)',
+                boxShadow: '0 10px 25px -10px rgba(61, 184, 201, 0.6)',
+              }}
+            >
+              <img
+                src="/logo.png"
+                alt="Diamond Code"
+                className="w-full h-full object-contain"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src =
+                    'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" fill="none" stroke="%233DB8C9" stroke-width="2.5"><path d="M10 4 L30 4 L36 14 L20 36 L4 14 Z"/><path d="M4 14 L36 14"/><path d="M10 4 L16 14 L20 36"/><path d="M30 4 L24 14 L20 36"/></svg>';
+                }}
+              />
+            </div>
+
+            <div className="min-w-0">
+              <span
+                className="text-xs px-2.5 py-1 rounded-full font-semibold uppercase text-white"
+                style={{
+                  background: `linear-gradient(135deg, ${brand.cyan} 0%, ${brand.steel} 100%)`,
+                }}
+              >
+                Admin - Sucursal
+              </span>
+              <h1 className="text-3xl font-bold mt-1 truncate">
+                {barInfo?.name || 'Panel de Control'}
+              </h1>
+              {barInfo && (
+                <div
+                  className="flex flex-wrap items-center gap-3 mt-2 text-xs"
+                  style={{ color: '#8fa3b3' }}
+                >
+                  {barInfo.slug && (
+                    <span
+                      className="font-mono px-2 py-0.5 rounded border"
+                      style={{
+                        backgroundColor: brand.slateDark,
+                        borderColor: 'rgba(61, 184, 201, 0.3)',
+                        color: brand.cyan,
+                      }}
+                    >
+                      /{barInfo.slug}
+                    </span>
+                  )}
+                  {barInfo.address && <span>📍 {barInfo.address}</span>}
+                  {barInfo.phone && <span>📞 {barInfo.phone}</span>}
+                </div>
+              )}
+            </div>
           </div>
+
           <button
             onClick={handleLogout}
-            className="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg text-sm font-medium transition shrink-0"
+            className="bg-red-600 hover:bg-red-500 px-4 py-2 rounded-lg text-sm font-medium transition shrink-0 shadow-lg shadow-red-600/30"
           >
             Cerrar Sesión
           </button>
         </header>
 
-        {/* BANNER DE TRIAL */}
+        {/* BANNER TRIAL */}
         {barInfo?.trial_until &&
           (() => {
             const days = Math.ceil(
@@ -843,94 +899,89 @@ export default function AdminDashboard() {
 
         {/* MÉTRICAS */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-lg">
-            <h3 className="text-slate-400 text-sm font-medium">Ventas Totales Cobradas</h3>
-            <p className="text-3xl font-bold mt-2 text-emerald-400">
+          <div
+            className="p-6 rounded-xl border shadow-lg"
+            style={{
+              backgroundColor: brand.slateDark,
+              borderColor: 'rgba(16, 185, 129, 0.3)',
+            }}
+          >
+            <h3 className="text-sm font-medium" style={{ color: '#8fa3b3' }}>
+              Ventas Totales Cobradas
+            </h3>
+            <p className="text-3xl font-bold mt-2" style={{ color: brand.greenBright }}>
               ${totalRevenue.toFixed(2)}
             </p>
           </div>
-          <div className="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-lg">
-            <h3 className="text-slate-400 text-sm font-medium">Cuentas Cobradas</h3>
-            <p className="text-3xl font-bold mt-2 text-sky-400">{paidOrders.length}</p>
+          <div
+            className="p-6 rounded-xl border shadow-lg"
+            style={{ backgroundColor: brand.slateDark, borderColor: 'rgba(61, 184, 201, 0.25)' }}
+          >
+            <h3 className="text-sm font-medium" style={{ color: '#8fa3b3' }}>
+              Cuentas Cobradas
+            </h3>
+            <p className="text-3xl font-bold mt-2" style={{ color: brand.cyan }}>
+              {paidOrders.length}
+            </p>
           </div>
-          <div className="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-lg">
-            <h3 className="text-slate-400 text-sm font-medium">Mesas / Órdenes Pendientes</h3>
-            <p className="text-3xl font-bold mt-2 text-amber-400">{pendingOrders.length}</p>
+          <div
+            className="p-6 rounded-xl border shadow-lg"
+            style={{ backgroundColor: brand.slateDark, borderColor: 'rgba(245, 158, 11, 0.25)' }}
+          >
+            <h3 className="text-sm font-medium" style={{ color: '#8fa3b3' }}>
+              Mesas / Órdenes Pendientes
+            </h3>
+            <p className="text-3xl font-bold mt-2" style={{ color: brand.amber }}>
+              {pendingOrders.length}
+            </p>
           </div>
         </div>
 
         {/* PESTAÑAS */}
-        <div className="flex flex-wrap gap-3 mb-6 border-b border-slate-800 pb-4">
-          <button
-            onClick={() => setActiveTab('analytics')}
-            className={`px-4 py-2 rounded-lg font-semibold text-sm transition ${
-              activeTab === 'analytics'
-                ? 'bg-emerald-600 text-white'
-                : 'bg-slate-800 text-slate-400 hover:text-white'
-            }`}
-          >
-            📊 Análisis de Ganancias
-          </button>
-          <button
-            onClick={() => setActiveTab('paid')}
-            className={`px-4 py-2 rounded-lg font-semibold text-sm transition ${
-              activeTab === 'paid'
-                ? 'bg-emerald-600 text-white'
-                : 'bg-slate-800 text-slate-400 hover:text-white'
-            }`}
-          >
-            📋 Historial de Pagadas ({paidOrders.length})
-          </button>
-          <button
-            onClick={() => setActiveTab('pending')}
-            className={`px-4 py-2 rounded-lg font-semibold text-sm transition ${
-              activeTab === 'pending'
-                ? 'bg-amber-600 text-white'
-                : 'bg-slate-800 text-slate-400 hover:text-white'
-            }`}
-          >
-            ⏳ Mesas Activas ({pendingOrders.length})
-          </button>
-          <button
-            onClick={() => setActiveTab('menu')}
-            className={`px-4 py-2 rounded-lg font-semibold text-sm transition ${
-              activeTab === 'menu'
-                ? 'bg-indigo-600 text-white'
-                : 'bg-slate-800 text-slate-400 hover:text-white'
-            }`}
-          >
-            📖 Gestionar Menú ({productsList.length})
-          </button>
-          <button
-            onClick={() => setActiveTab('tables')}
-            className={`px-4 py-2 rounded-lg font-semibold text-sm transition ${
-              activeTab === 'tables'
-                ? 'bg-cyan-600 text-white'
-                : 'bg-slate-800 text-slate-400 hover:text-white'
-            }`}
-          >
-            🪑 Gestionar Mesas ({tablesList.length})
-          </button>
-          <button
-            onClick={() => setActiveTab('employees')}
-            className={`px-4 py-2 rounded-lg font-semibold text-sm transition ${
-              activeTab === 'employees'
-                ? 'bg-purple-600 text-white'
-                : 'bg-slate-800 text-slate-400 hover:text-white'
-            }`}
-          >
-            👥 Gestionar Empleados ({employees.length})
-          </button>
+        <div
+          className="flex flex-wrap gap-3 mb-6 pb-4 border-b"
+          style={{ borderColor: 'rgba(61, 184, 201, 0.3)' }}
+        >
+          {(
+            [
+              { key: 'analytics', label: `📊 Análisis de Ganancias` },
+              { key: 'paid', label: `📋 Historial (${paidOrders.length})` },
+              { key: 'pending', label: `⏳ Mesas Activas (${pendingOrders.length})` },
+              { key: 'menu', label: `📖 Menú (${productsList.length})` },
+              { key: 'tables', label: `🪑 Mesas (${tablesList.length})` },
+              { key: 'employees', label: `👥 Empleados (${employees.length})` },
+            ] as { key: typeof activeTab; label: string }[]
+          ).map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              className="px-4 py-2 rounded-lg font-semibold text-sm transition"
+              style={{
+                background:
+                  activeTab === tab.key
+                    ? tab.key === 'pending'
+                      ? `linear-gradient(135deg, ${brand.amber} 0%, #D97706 100%)`
+                      : `linear-gradient(135deg, ${brand.cyan} 0%, ${brand.steel} 100%)`
+                    : brand.slateDark,
+                color: activeTab === tab.key ? '#FFFFFF' : '#8fa3b3',
+              }}
+            >
+              {tab.label}
+            </button>
+          ))}
         </div>
 
         {/* PESTAÑA: ANALYTICS */}
         {activeTab === 'analytics' && (
-          <div className="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-xl space-y-6">
+          <div
+            className="p-6 rounded-xl border shadow-xl space-y-6"
+            style={{ backgroundColor: brand.slateDark, borderColor: 'rgba(61, 184, 201, 0.25)' }}
+          >
             <div>
-              <h2 className="text-xl font-semibold text-emerald-400">
+              <h2 className="text-xl font-semibold" style={{ color: brand.cyan }}>
                 📊 Análisis de Ganancias
               </h2>
-              <p className="text-xs text-slate-400 mt-0.5">
+              <p className="text-xs mt-0.5" style={{ color: '#8fa3b3' }}>
                 Selecciona el período que quieras analizar
               </p>
             </div>
@@ -940,64 +991,93 @@ export default function AdminDashboard() {
                 <button
                   key={opt.key}
                   onClick={() => setRangeOption(opt.key)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
-                    rangeOption === opt.key
-                      ? 'bg-emerald-600 text-white'
-                      : 'bg-slate-900 text-slate-300 hover:bg-slate-700 border border-slate-700'
-                  }`}
+                  className="px-3 py-1.5 rounded-lg text-xs font-semibold transition border"
+                  style={{
+                    background:
+                      rangeOption === opt.key
+                        ? `linear-gradient(135deg, ${brand.cyan} 0%, ${brand.steel} 100%)`
+                        : '#000000',
+                    color: rangeOption === opt.key ? '#FFFFFF' : '#8fa3b3',
+                    borderColor:
+                      rangeOption === opt.key ? 'transparent' : 'rgba(61, 184, 201, 0.3)',
+                  }}
                 >
                   {opt.label}
                 </button>
               ))}
               <button
                 onClick={() => setRangeOption('custom')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
-                  rangeOption === 'custom'
-                    ? 'bg-emerald-600 text-white'
-                    : 'bg-slate-900 text-slate-300 hover:bg-slate-700 border border-slate-700'
-                }`}
+                className="px-3 py-1.5 rounded-lg text-xs font-semibold transition border"
+                style={{
+                  background:
+                    rangeOption === 'custom'
+                      ? `linear-gradient(135deg, ${brand.cyan} 0%, ${brand.steel} 100%)`
+                      : '#000000',
+                  color: rangeOption === 'custom' ? '#FFFFFF' : '#8fa3b3',
+                  borderColor:
+                    rangeOption === 'custom' ? 'transparent' : 'rgba(61, 184, 201, 0.3)',
+                }}
               >
                 📅 Personalizado
               </button>
             </div>
 
             {rangeOption === 'custom' && (
-              <div className="bg-slate-900 border border-slate-700 p-4 rounded-xl flex flex-wrap gap-3 items-end">
+              <div
+                className="p-4 rounded-xl flex flex-wrap gap-3 items-end border"
+                style={{ backgroundColor: '#000000', borderColor: 'rgba(61, 184, 201, 0.3)' }}
+              >
                 <div>
-                  <label className="block text-xs font-semibold uppercase text-slate-400 mb-1">
+                  <label
+                    className="block text-xs font-semibold uppercase mb-1"
+                    style={{ color: '#8fa3b3' }}
+                  >
                     Desde
                   </label>
                   <input
                     type="date"
                     value={customStart}
                     onChange={(e) => setCustomStart(e.target.value)}
-                    className="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white"
+                    className="rounded-lg px-3 py-2 text-sm text-white border"
+                    style={{ backgroundColor: brand.slate, borderColor: 'rgba(61, 184, 201, 0.3)' }}
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold uppercase text-slate-400 mb-1">
+                  <label
+                    className="block text-xs font-semibold uppercase mb-1"
+                    style={{ color: '#8fa3b3' }}
+                  >
                     Hasta
                   </label>
                   <input
                     type="date"
                     value={customEnd}
                     onChange={(e) => setCustomEnd(e.target.value)}
-                    className="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white"
+                    className="rounded-lg px-3 py-2 text-sm text-white border"
+                    style={{ backgroundColor: brand.slate, borderColor: 'rgba(61, 184, 201, 0.3)' }}
                   />
                 </div>
               </div>
             )}
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="bg-slate-900 border border-slate-700 p-5 rounded-xl">
-                <span className="text-xs text-slate-400 block mb-1">Ingresos del período</span>
-                <span className="text-3xl font-black text-emerald-400">
+              <div
+                className="p-5 rounded-xl border"
+                style={{
+                  backgroundColor: 'rgba(16, 185, 129, 0.08)',
+                  borderColor: 'rgba(16, 185, 129, 0.3)',
+                }}
+              >
+                <span className="text-xs block mb-1" style={{ color: '#8fa3b3' }}>
+                  Ingresos del período
+                </span>
+                <span className="text-3xl font-black" style={{ color: brand.greenBright }}>
                   ${rangeData.total.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
                 </span>
                 {rangeData.previousTotal > 0 && (
                   <div className="mt-2 text-xs">
                     {rangeData.total >= rangeData.previousTotal ? (
-                      <span className="text-emerald-400 font-bold">
+                      <span style={{ color: brand.greenBright }} className="font-bold">
                         ↑{' '}
                         {(
                           ((rangeData.total - rangeData.previousTotal) /
@@ -1021,30 +1101,68 @@ export default function AdminDashboard() {
                 )}
               </div>
 
-              <div className="bg-slate-900 border border-slate-700 p-5 rounded-xl">
-                <span className="text-xs text-slate-400 block mb-1">Cuentas cobradas</span>
-                <span className="text-3xl font-black text-sky-400">{rangeData.count}</span>
+              <div
+                className="p-5 rounded-xl border"
+                style={{
+                  backgroundColor: 'rgba(61, 184, 201, 0.08)',
+                  borderColor: 'rgba(61, 184, 201, 0.3)',
+                }}
+              >
+                <span className="text-xs block mb-1" style={{ color: '#8fa3b3' }}>
+                  Cuentas cobradas
+                </span>
+                <span className="text-3xl font-black" style={{ color: brand.cyan }}>
+                  {rangeData.count}
+                </span>
               </div>
 
-              <div className="bg-slate-900 border border-slate-700 p-5 rounded-xl">
-                <span className="text-xs text-slate-400 block mb-1">Ticket promedio</span>
-                <span className="text-3xl font-black text-purple-400">
+              <div
+                className="p-5 rounded-xl border"
+                style={{
+                  backgroundColor: 'rgba(245, 158, 11, 0.08)',
+                  borderColor: 'rgba(245, 158, 11, 0.3)',
+                }}
+              >
+                <span className="text-xs block mb-1" style={{ color: '#8fa3b3' }}>
+                  Ticket promedio
+                </span>
+                <span className="text-3xl font-black" style={{ color: brand.amber }}>
                   ${rangeData.average.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
                 </span>
               </div>
             </div>
 
             {rangeLoading ? (
-              <div className="bg-slate-900 border border-slate-700 p-12 rounded-xl text-center text-slate-400 text-sm">
+              <div
+                className="p-12 rounded-xl text-center text-sm border"
+                style={{
+                  backgroundColor: '#000000',
+                  borderColor: 'rgba(61, 184, 201, 0.3)',
+                  color: '#8fa3b3',
+                }}
+              >
                 Cargando datos...
               </div>
             ) : rangeData.chart.length === 0 ? (
-              <div className="bg-slate-900 border border-slate-700 p-12 rounded-xl text-center text-slate-400 text-sm">
+              <div
+                className="p-12 rounded-xl text-center text-sm border"
+                style={{
+                  backgroundColor: '#000000',
+                  borderColor: 'rgba(61, 184, 201, 0.3)',
+                  color: '#8fa3b3',
+                }}
+              >
                 No hay datos en este período.
               </div>
             ) : (
-              <div className="bg-slate-900 border border-slate-700 p-5 rounded-xl">
-                <h3 className="text-sm font-bold uppercase tracking-wider text-slate-400 mb-4">
+              <div
+                className="p-5 rounded-xl border"
+                style={{ backgroundColor: '#000000', borderColor: 'rgba(61, 184, 201, 0.3)' }}
+              >
+                <h3
+                  className="text-sm font-bold uppercase tracking-wider mb-4"
+                  style={{ color: '#8fa3b3' }}
+                >
                   Tendencia del período
                 </h3>
                 <div className="flex items-end justify-between gap-1.5 h-56 overflow-x-auto pb-2">
@@ -1056,15 +1174,25 @@ export default function AdminDashboard() {
                         key={i}
                         className="flex-1 min-w-[40px] flex flex-col items-center justify-end gap-2 h-full"
                       >
-                        <span className="text-[10px] font-bold text-emerald-400">
+                        <span
+                          className="text-[10px] font-bold"
+                          style={{ color: brand.greenBright }}
+                        >
                           {m.total > 999 ? `${(m.total / 1000).toFixed(1)}k` : m.total.toFixed(0)}
                         </span>
                         <div
-                          className="w-full bg-gradient-to-t from-emerald-600 to-emerald-400 rounded-t-lg transition-all hover:from-emerald-500 hover:to-emerald-300"
-                          style={{ height: `${Math.max(heightPct, 2)}%`, minHeight: '4px' }}
+                          className="w-full rounded-t-lg transition-all"
+                          style={{
+                            height: `${Math.max(heightPct, 2)}%`,
+                            minHeight: '4px',
+                            background: `linear-gradient(to top, ${brand.steel}, ${brand.cyan})`,
+                          }}
                           title={`${m.label}: $${m.total.toFixed(2)}`}
                         />
-                        <span className="text-[9px] text-slate-500 font-medium whitespace-nowrap">
+                        <span
+                          className="text-[9px] font-medium whitespace-nowrap"
+                          style={{ color: '#5d7285' }}
+                        >
                           {m.label}
                         </span>
                       </div>
@@ -1079,15 +1207,23 @@ export default function AdminDashboard() {
         {/* PESTAÑA: MESAS */}
         {activeTab === 'tables' && (
           <div className="space-y-6">
-            <div className="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-xl">
-              <h2 className="text-xl font-semibold mb-2 text-cyan-400">Agregar Nueva Mesa</h2>
-              <p className="text-xs text-slate-400 mb-4">
+            <div
+              className="p-6 rounded-xl border shadow-xl"
+              style={{ backgroundColor: brand.slateDark, borderColor: 'rgba(61, 184, 201, 0.25)' }}
+            >
+              <h2 className="text-xl font-semibold mb-2" style={{ color: brand.cyan }}>
+                Agregar Nueva Mesa
+              </h2>
+              <p className="text-xs mb-4" style={{ color: '#8fa3b3' }}>
                 Ingresa solo el número. El sistema la mostrará como "Mesa 01", "Mesa 02", etc.
               </p>
 
               <form onSubmit={handleCreateTable} className="flex flex-wrap gap-3 items-end">
                 <div className="w-40">
-                  <label className="block text-xs font-semibold uppercase text-slate-400 mb-1">
+                  <label
+                    className="block text-xs font-semibold uppercase mb-1"
+                    style={{ color: '#8fa3b3' }}
+                  >
                     Número de mesa
                   </label>
                   <input
@@ -1097,30 +1233,50 @@ export default function AdminDashboard() {
                     placeholder="Ej. 7"
                     value={newTableNumber}
                     onChange={(e) => setNewTableNumber(e.target.value)}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500"
+                    className="w-full rounded-lg px-3 py-2 text-sm text-white border focus:outline-none"
+                    style={{ backgroundColor: '#000000', borderColor: 'rgba(61, 184, 201, 0.3)' }}
                   />
                 </div>
                 <button
                   type="submit"
                   disabled={tableLoading}
-                  className="bg-cyan-600 hover:bg-cyan-500 text-white font-semibold py-2 px-4 rounded-lg text-sm transition h-[38px]"
+                  className="text-white font-semibold py-2 px-4 rounded-lg text-sm transition h-[38px] disabled:opacity-50"
+                  style={{
+                    background: `linear-gradient(135deg, ${brand.cyan} 0%, ${brand.steel} 100%)`,
+                  }}
                 >
                   {tableLoading ? 'Creando...' : '+ Agregar Mesa'}
                 </button>
               </form>
             </div>
 
-            <div className="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-xl">
+            <div
+              className="p-6 rounded-xl border shadow-xl"
+              style={{ backgroundColor: brand.slateDark, borderColor: 'rgba(61, 184, 201, 0.25)' }}
+            >
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-semibold">Mesas de tu Sucursal</h2>
-                <span className="text-xs bg-cyan-500/10 text-cyan-400 px-2.5 py-1 rounded-full font-semibold">
+                <span
+                  className="text-xs px-2.5 py-1 rounded-full font-semibold border"
+                  style={{
+                    backgroundColor: 'rgba(61, 184, 201, 0.15)',
+                    color: brand.cyan,
+                    borderColor: 'rgba(61, 184, 201, 0.3)',
+                  }}
+                >
                   {tablesList.filter((t) => t.is_active).length} activas / {tablesList.length} total
                 </span>
               </div>
 
               {tablesList.length === 0 ? (
-                <div className="text-center py-12 bg-slate-900/50 rounded-xl border border-dashed border-slate-700">
-                  <p className="text-slate-400 text-sm">
+                <div
+                  className="text-center py-12 rounded-xl border border-dashed"
+                  style={{
+                    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                    borderColor: 'rgba(61, 184, 201, 0.3)',
+                  }}
+                >
+                  <p className="text-sm" style={{ color: '#8fa3b3' }}>
                     No hay mesas registradas. Agrega la primera arriba.
                   </p>
                 </div>
@@ -1132,26 +1288,31 @@ export default function AdminDashboard() {
                       <div
                         key={table.id}
                         className={`p-4 rounded-xl border flex flex-col justify-between gap-2 transition ${
-                          isActive
-                            ? 'bg-slate-900 border-slate-700'
-                            : 'bg-slate-950/60 border-slate-800 opacity-60'
+                          isActive ? '' : 'opacity-60'
                         }`}
+                        style={{
+                          backgroundColor: isActive ? '#000000' : 'rgba(0, 0, 0, 0.4)',
+                          borderColor: isActive
+                            ? 'rgba(61, 184, 201, 0.3)'
+                            : 'rgba(61, 184, 201, 0.15)',
+                        }}
                       >
                         <div className="flex justify-between items-start">
                           <h3
-                            className={`font-bold text-sm ${
-                              isActive ? 'text-white' : 'text-slate-500 line-through'
-                            }`}
+                            className={`font-bold text-sm ${isActive ? 'text-white' : 'line-through'}`}
+                            style={{ color: isActive ? '#FFFFFF' : '#5d7285' }}
                           >
                             Mesa {String(table.table_number).padStart(2, '0')}
                           </h3>
                           <button
                             onClick={() => handleToggleTableActive(table.id, isActive)}
-                            className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
-                              isActive
-                                ? 'bg-emerald-500/10 text-emerald-400'
-                                : 'bg-slate-700 text-slate-400'
-                            }`}
+                            className="text-[10px] font-bold px-1.5 py-0.5 rounded"
+                            style={{
+                              backgroundColor: isActive
+                                ? 'rgba(61, 184, 201, 0.2)'
+                                : 'rgba(93, 114, 133, 0.3)',
+                              color: isActive ? brand.cyan : '#8fa3b3',
+                            }}
                             title={isActive ? 'Desactivar' : 'Activar'}
                           >
                             {isActive ? 'ON' : 'OFF'}
@@ -1161,7 +1322,12 @@ export default function AdminDashboard() {
                         <div className="flex gap-1">
                           <button
                             onClick={() => setEditingTable(table)}
-                            className="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 px-2 py-1 rounded-lg text-[10px] font-medium transition"
+                            className="flex-1 border px-2 py-1 rounded-lg text-[10px] font-medium transition"
+                            style={{
+                              backgroundColor: 'rgba(61, 184, 201, 0.15)',
+                              borderColor: 'rgba(61, 184, 201, 0.3)',
+                              color: brand.cyan,
+                            }}
                           >
                             ✏️
                           </button>
@@ -1184,13 +1350,25 @@ export default function AdminDashboard() {
 
         {/* MODAL EDITAR MESA */}
         {editingTable && (
-          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-slate-800 border border-slate-700 p-6 rounded-2xl max-w-md w-full shadow-2xl space-y-4">
-              <h3 className="text-lg font-bold text-cyan-400">Editar Mesa</h3>
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div
+              className="p-6 rounded-2xl max-w-md w-full shadow-2xl space-y-4 border"
+              style={{
+                backgroundColor: brand.slateDark,
+                borderColor: 'rgba(61, 184, 201, 0.3)',
+                boxShadow: '0 25px 60px -20px rgba(61, 184, 201, 0.4)',
+              }}
+            >
+              <h3 className="text-lg font-bold" style={{ color: brand.cyan }}>
+                Editar Mesa
+              </h3>
 
               <form onSubmit={handleUpdateTable} className="space-y-4">
                 <div>
-                  <label className="block text-xs font-semibold uppercase text-slate-400 mb-1">
+                  <label
+                    className="block text-xs font-semibold uppercase mb-1"
+                    style={{ color: '#8fa3b3' }}
+                  >
                     Número de mesa
                   </label>
                   <input
@@ -1204,7 +1382,8 @@ export default function AdminDashboard() {
                         table_number: parseInt(e.target.value) || 0,
                       })
                     }
-                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500"
+                    className="w-full rounded-lg px-3 py-2 text-sm text-white border focus:outline-none"
+                    style={{ backgroundColor: '#000000', borderColor: 'rgba(61, 184, 201, 0.3)' }}
                   />
                 </div>
 
@@ -1212,14 +1391,22 @@ export default function AdminDashboard() {
                   <button
                     type="button"
                     onClick={() => setEditingTable(null)}
-                    className="bg-slate-700 hover:bg-slate-600 px-4 py-2 rounded-lg text-xs font-medium transition"
+                    className="border px-4 py-2 rounded-lg text-xs font-medium transition"
+                    style={{
+                      backgroundColor: 'rgba(0, 0, 0, 0.3)',
+                      borderColor: 'rgba(61, 184, 201, 0.3)',
+                      color: '#8fa3b3',
+                    }}
                   >
                     Cancelar
                   </button>
                   <button
                     type="submit"
                     disabled={tableLoading}
-                    className="bg-cyan-600 hover:bg-cyan-500 px-4 py-2 rounded-lg text-xs font-medium transition"
+                    className="text-white px-4 py-2 rounded-lg text-xs font-medium transition"
+                    style={{
+                      background: `linear-gradient(135deg, ${brand.cyan} 0%, ${brand.steel} 100%)`,
+                    }}
                   >
                     {tableLoading ? 'Guardando...' : 'Guardar'}
                   </button>
@@ -1232,11 +1419,14 @@ export default function AdminDashboard() {
         {/* PESTAÑA: MENÚ */}
         {activeTab === 'menu' && (
           <div className="space-y-6">
-            <div className="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-xl">
-              <h2 className="text-xl font-semibold mb-2 text-indigo-400">
+            <div
+              className="p-6 rounded-xl border shadow-xl"
+              style={{ backgroundColor: brand.slateDark, borderColor: 'rgba(61, 184, 201, 0.25)' }}
+            >
+              <h2 className="text-xl font-semibold mb-2" style={{ color: brand.cyan }}>
                 Agregar Nuevo Platillo o Bebida al Menú
               </h2>
-              <p className="text-xs text-slate-400 mb-4">
+              <p className="text-xs mb-4" style={{ color: '#8fa3b3' }}>
                 Se guardará automáticamente en el catálogo de tu bar.
               </p>
 
@@ -1245,7 +1435,10 @@ export default function AdminDashboard() {
                 className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end"
               >
                 <div>
-                  <label className="block text-xs font-semibold uppercase text-slate-400 mb-1">
+                  <label
+                    className="block text-xs font-semibold uppercase mb-1"
+                    style={{ color: '#8fa3b3' }}
+                  >
                     Nombre
                   </label>
                   <input
@@ -1254,11 +1447,15 @@ export default function AdminDashboard() {
                     placeholder="Ej. Margarita"
                     value={newProductName}
                     onChange={(e) => setNewProductName(e.target.value)}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500"
+                    className="w-full rounded-lg px-3 py-2 text-sm text-white border focus:outline-none"
+                    style={{ backgroundColor: '#000000', borderColor: 'rgba(61, 184, 201, 0.3)' }}
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold uppercase text-slate-400 mb-1">
+                  <label
+                    className="block text-xs font-semibold uppercase mb-1"
+                    style={{ color: '#8fa3b3' }}
+                  >
                     Precio ($)
                   </label>
                   <input
@@ -1268,17 +1465,22 @@ export default function AdminDashboard() {
                     placeholder="90.00"
                     value={newProductPrice}
                     onChange={(e) => setNewProductPrice(e.target.value)}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500"
+                    className="w-full rounded-lg px-3 py-2 text-sm text-white border focus:outline-none"
+                    style={{ backgroundColor: '#000000', borderColor: 'rgba(61, 184, 201, 0.3)' }}
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold uppercase text-slate-400 mb-1">
+                  <label
+                    className="block text-xs font-semibold uppercase mb-1"
+                    style={{ color: '#8fa3b3' }}
+                  >
                     Categoría
                   </label>
                   <select
                     value={newProductCategory}
                     onChange={(e) => setNewProductCategory(e.target.value)}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500"
+                    className="w-full rounded-lg px-3 py-2 text-sm text-white border focus:outline-none"
+                    style={{ backgroundColor: '#000000', borderColor: 'rgba(61, 184, 201, 0.3)' }}
                   >
                     <option value="Bebidas">Bebidas</option>
                     <option value="Cocktails">Cocktails</option>
@@ -1288,7 +1490,10 @@ export default function AdminDashboard() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold uppercase text-slate-400 mb-1">
+                  <label
+                    className="block text-xs font-semibold uppercase mb-1"
+                    style={{ color: '#8fa3b3' }}
+                  >
                     Descripción
                   </label>
                   <input
@@ -1296,30 +1501,50 @@ export default function AdminDashboard() {
                     placeholder="Opcional"
                     value={newProductDesc}
                     onChange={(e) => setNewProductDesc(e.target.value)}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500"
+                    className="w-full rounded-lg px-3 py-2 text-sm text-white border focus:outline-none"
+                    style={{ backgroundColor: '#000000', borderColor: 'rgba(61, 184, 201, 0.3)' }}
                   />
                 </div>
                 <button
                   type="submit"
                   disabled={productLoading}
-                  className="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2 px-4 rounded-lg text-sm transition h-[38px]"
+                  className="text-white font-semibold py-2 px-4 rounded-lg text-sm transition h-[38px] disabled:opacity-50"
+                  style={{
+                    background: `linear-gradient(135deg, ${brand.cyan} 0%, ${brand.steel} 100%)`,
+                  }}
                 >
                   {productLoading ? 'Agregando...' : 'Añadir'}
                 </button>
               </form>
             </div>
 
-            <div className="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-xl">
+            <div
+              className="p-6 rounded-xl border shadow-xl"
+              style={{ backgroundColor: brand.slateDark, borderColor: 'rgba(61, 184, 201, 0.25)' }}
+            >
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-semibold">Menú de tu Sucursal</h2>
-                <span className="text-xs bg-indigo-500/10 text-indigo-400 px-2.5 py-1 rounded-full font-semibold">
+                <span
+                  className="text-xs px-2.5 py-1 rounded-full font-semibold border"
+                  style={{
+                    backgroundColor: 'rgba(61, 184, 201, 0.15)',
+                    color: brand.cyan,
+                    borderColor: 'rgba(61, 184, 201, 0.3)',
+                  }}
+                >
                   {productsList.length} artículos disponibles
                 </span>
               </div>
 
               {productsList.length === 0 ? (
-                <div className="text-center py-12 bg-slate-900/50 rounded-xl border border-dashed border-slate-700">
-                  <p className="text-slate-400 text-sm">
+                <div
+                  className="text-center py-12 rounded-xl border border-dashed"
+                  style={{
+                    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                    borderColor: 'rgba(61, 184, 201, 0.3)',
+                  }}
+                >
+                  <p className="text-sm" style={{ color: '#8fa3b3' }}>
                     Tu menú está vacío. Agrega tu primer platillo o bebida arriba.
                   </p>
                 </div>
@@ -1328,32 +1553,53 @@ export default function AdminDashboard() {
                   {productsList.map((prod) => (
                     <div
                       key={prod.id}
-                      className="bg-slate-900 border border-slate-700/80 p-4 rounded-xl flex flex-col justify-between gap-3 shadow-md hover:border-slate-600 transition"
+                      className="p-4 rounded-xl flex flex-col justify-between gap-3 shadow-md border transition"
+                      style={{ backgroundColor: '#000000', borderColor: 'rgba(61, 184, 201, 0.3)' }}
                     >
                       <div>
                         <div className="flex justify-between items-start gap-2">
                           <div>
-                            <span className="text-[10px] uppercase font-bold tracking-wider text-indigo-400 bg-indigo-950/60 px-2 py-0.5 rounded border border-indigo-500/20">
+                            <span
+                              className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded border"
+                              style={{
+                                color: brand.cyan,
+                                backgroundColor: 'rgba(61, 184, 201, 0.15)',
+                                borderColor: 'rgba(61, 184, 201, 0.3)',
+                              }}
+                            >
                               {prod.category || 'General'}
                             </span>
-                            <h3 className="font-bold text-white text-base mt-1">
-                              {prod.name}
-                            </h3>
+                            <h3 className="font-bold text-white text-base mt-1">{prod.name}</h3>
                           </div>
-                          <span className="text-emerald-400 font-black text-base bg-emerald-950/40 px-2 py-0.5 rounded-lg border border-emerald-500/20">
+                          <span
+                            className="font-black text-base px-2 py-0.5 rounded-lg border"
+                            style={{
+                              color: brand.greenBright,
+                              backgroundColor: 'rgba(16, 185, 129, 0.15)',
+                              borderColor: 'rgba(16, 185, 129, 0.3)',
+                            }}
+                          >
                             ${Number(prod.price).toFixed(2)}
                           </span>
                         </div>
                         {prod.description && (
-                          <p className="text-xs text-slate-400 mt-2 line-clamp-2">
+                          <p className="text-xs mt-2 line-clamp-2" style={{ color: '#8fa3b3' }}>
                             {prod.description}
                           </p>
                         )}
                       </div>
-                      <div className="flex justify-end gap-2 pt-3 border-t border-slate-800/80">
+                      <div
+                        className="flex justify-end gap-2 pt-3 border-t"
+                        style={{ borderColor: 'rgba(61, 184, 201, 0.2)' }}
+                      >
                         <button
                           onClick={() => setEditingProduct(prod)}
-                          className="bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 px-3 py-1 rounded-lg text-xs font-medium transition flex items-center gap-1"
+                          className="border px-3 py-1 rounded-lg text-xs font-medium transition flex items-center gap-1"
+                          style={{
+                            backgroundColor: 'rgba(61, 184, 201, 0.15)',
+                            borderColor: 'rgba(61, 184, 201, 0.3)',
+                            color: brand.cyan,
+                          }}
                         >
                           ✏️ Editar
                         </button>
@@ -1375,29 +1621,41 @@ export default function AdminDashboard() {
 
         {/* MODAL EDITAR PRODUCTO */}
         {editingProduct && (
-          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-slate-800 border border-slate-700 p-6 rounded-2xl max-w-md w-full shadow-2xl space-y-4">
-              <h3 className="text-lg font-bold text-indigo-400">
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div
+              className="p-6 rounded-2xl max-w-md w-full shadow-2xl space-y-4 border"
+              style={{
+                backgroundColor: brand.slateDark,
+                borderColor: 'rgba(61, 184, 201, 0.3)',
+                boxShadow: '0 25px 60px -20px rgba(61, 184, 201, 0.4)',
+              }}
+            >
+              <h3 className="text-lg font-bold" style={{ color: brand.cyan }}>
                 Editar Platillo o Bebida
               </h3>
 
               <form onSubmit={handleUpdateProduct} className="space-y-4">
                 <div>
-                  <label className="block text-xs font-semibold uppercase text-slate-400 mb-1">
+                  <label
+                    className="block text-xs font-semibold uppercase mb-1"
+                    style={{ color: '#8fa3b3' }}
+                  >
                     Nombre
                   </label>
                   <input
                     type="text"
                     required
                     value={editingProduct.name}
-                    onChange={(e) =>
-                      setEditingProduct({ ...editingProduct, name: e.target.value })
-                    }
-                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500"
+                    onChange={(e) => setEditingProduct({ ...editingProduct, name: e.target.value })}
+                    className="w-full rounded-lg px-3 py-2 text-sm text-white border focus:outline-none"
+                    style={{ backgroundColor: '#000000', borderColor: 'rgba(61, 184, 201, 0.3)' }}
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold uppercase text-slate-400 mb-1">
+                  <label
+                    className="block text-xs font-semibold uppercase mb-1"
+                    style={{ color: '#8fa3b3' }}
+                  >
                     Precio ($)
                   </label>
                   <input
@@ -1411,11 +1669,15 @@ export default function AdminDashboard() {
                         price: parseFloat(e.target.value) || 0,
                       })
                     }
-                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500"
+                    className="w-full rounded-lg px-3 py-2 text-sm text-white border focus:outline-none"
+                    style={{ backgroundColor: '#000000', borderColor: 'rgba(61, 184, 201, 0.3)' }}
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold uppercase text-slate-400 mb-1">
+                  <label
+                    className="block text-xs font-semibold uppercase mb-1"
+                    style={{ color: '#8fa3b3' }}
+                  >
                     Categoría
                   </label>
                   <select
@@ -1423,7 +1685,8 @@ export default function AdminDashboard() {
                     onChange={(e) =>
                       setEditingProduct({ ...editingProduct, category: e.target.value })
                     }
-                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500"
+                    className="w-full rounded-lg px-3 py-2 text-sm text-white border focus:outline-none"
+                    style={{ backgroundColor: '#000000', borderColor: 'rgba(61, 184, 201, 0.3)' }}
                   >
                     <option value="Bebidas">Bebidas</option>
                     <option value="Cocktails">Cocktails</option>
@@ -1433,7 +1696,10 @@ export default function AdminDashboard() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold uppercase text-slate-400 mb-1">
+                  <label
+                    className="block text-xs font-semibold uppercase mb-1"
+                    style={{ color: '#8fa3b3' }}
+                  >
                     Descripción (Opcional)
                   </label>
                   <input
@@ -1442,7 +1708,8 @@ export default function AdminDashboard() {
                     onChange={(e) =>
                       setEditingProduct({ ...editingProduct, description: e.target.value })
                     }
-                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500"
+                    className="w-full rounded-lg px-3 py-2 text-sm text-white border focus:outline-none"
+                    style={{ backgroundColor: '#000000', borderColor: 'rgba(61, 184, 201, 0.3)' }}
                   />
                 </div>
 
@@ -1450,14 +1717,22 @@ export default function AdminDashboard() {
                   <button
                     type="button"
                     onClick={() => setEditingProduct(null)}
-                    className="bg-slate-700 hover:bg-slate-600 px-4 py-2 rounded-lg text-xs font-medium transition"
+                    className="border px-4 py-2 rounded-lg text-xs font-medium transition"
+                    style={{
+                      backgroundColor: 'rgba(0, 0, 0, 0.3)',
+                      borderColor: 'rgba(61, 184, 201, 0.3)',
+                      color: '#8fa3b3',
+                    }}
                   >
                     Cancelar
                   </button>
                   <button
                     type="submit"
                     disabled={productLoading}
-                    className="bg-indigo-600 hover:bg-indigo-500 px-4 py-2 rounded-lg text-xs font-medium transition"
+                    className="text-white px-4 py-2 rounded-lg text-xs font-medium transition"
+                    style={{
+                      background: `linear-gradient(135deg, ${brand.cyan} 0%, ${brand.steel} 100%)`,
+                    }}
                   >
                     {productLoading ? 'Guardando...' : 'Guardar Cambios'}
                   </button>
@@ -1470,8 +1745,11 @@ export default function AdminDashboard() {
         {/* PESTAÑA: EMPLEADOS */}
         {activeTab === 'employees' && (
           <div className="space-y-6">
-            <div className="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-xl">
-              <h2 className="text-xl font-semibold mb-4 text-purple-400">
+            <div
+              className="p-6 rounded-xl border shadow-xl"
+              style={{ backgroundColor: brand.slateDark, borderColor: 'rgba(61, 184, 201, 0.25)' }}
+            >
+              <h2 className="text-xl font-semibold mb-4" style={{ color: brand.cyan }}>
                 Agregar Nuevo Mesero o Cajero
               </h2>
               <form
@@ -1479,7 +1757,10 @@ export default function AdminDashboard() {
                 className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end"
               >
                 <div>
-                  <label className="block text-xs font-semibold uppercase text-slate-400 mb-1">
+                  <label
+                    className="block text-xs font-semibold uppercase mb-1"
+                    style={{ color: '#8fa3b3' }}
+                  >
                     Correo Electrónico
                   </label>
                   <input
@@ -1488,11 +1769,15 @@ export default function AdminDashboard() {
                     placeholder="empleado@correo.com"
                     value={newEmail}
                     onChange={(e) => setNewEmail(e.target.value)}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-500"
+                    className="w-full rounded-lg px-3 py-2 text-sm text-white border focus:outline-none"
+                    style={{ backgroundColor: '#000000', borderColor: 'rgba(61, 184, 201, 0.3)' }}
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold uppercase text-slate-400 mb-1">
+                  <label
+                    className="block text-xs font-semibold uppercase mb-1"
+                    style={{ color: '#8fa3b3' }}
+                  >
                     Contraseña Temporal
                   </label>
                   <input
@@ -1501,17 +1786,22 @@ export default function AdminDashboard() {
                     placeholder="••••••••"
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-500"
+                    className="w-full rounded-lg px-3 py-2 text-sm text-white border focus:outline-none"
+                    style={{ backgroundColor: '#000000', borderColor: 'rgba(61, 184, 201, 0.3)' }}
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold uppercase text-slate-400 mb-1">
+                  <label
+                    className="block text-xs font-semibold uppercase mb-1"
+                    style={{ color: '#8fa3b3' }}
+                  >
                     Rol
                   </label>
                   <select
                     value={newRole}
                     onChange={(e) => setNewRole(e.target.value as 'cashier' | 'waiter')}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-500"
+                    className="w-full rounded-lg px-3 py-2 text-sm text-white border focus:outline-none"
+                    style={{ backgroundColor: '#000000', borderColor: 'rgba(61, 184, 201, 0.3)' }}
                   >
                     <option value="waiter">Mesero</option>
                     <option value="cashier">Cajero</option>
@@ -1520,17 +1810,23 @@ export default function AdminDashboard() {
                 <button
                   type="submit"
                   disabled={employeeLoading}
-                  className="bg-purple-600 hover:bg-purple-500 text-white font-semibold py-2 px-4 rounded-lg text-sm transition h-[38px]"
+                  className="text-white font-semibold py-2 px-4 rounded-lg text-sm transition h-[38px] disabled:opacity-50"
+                  style={{
+                    background: `linear-gradient(135deg, ${brand.cyan} 0%, ${brand.steel} 100%)`,
+                  }}
                 >
                   {employeeLoading ? 'Registrando...' : 'Crear Empleado'}
                 </button>
               </form>
             </div>
 
-            <div className="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-xl">
+            <div
+              className="p-6 rounded-xl border shadow-xl"
+              style={{ backgroundColor: brand.slateDark, borderColor: 'rgba(61, 184, 201, 0.25)' }}
+            >
               <h2 className="text-xl font-semibold mb-4">Personal de tu Sucursal</h2>
               {employees.length === 0 ? (
-                <p className="text-slate-400 text-sm py-6 text-center">
+                <p className="text-sm py-6 text-center" style={{ color: '#8fa3b3' }}>
                   No hay empleados registrados en este bar.
                 </p>
               ) : (
@@ -1538,7 +1834,8 @@ export default function AdminDashboard() {
                   {employees.map((emp) => (
                     <div
                       key={emp.id}
-                      className="bg-slate-900 border border-slate-700 p-4 rounded-xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4"
+                      className="p-4 rounded-xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border"
+                      style={{ backgroundColor: '#000000', borderColor: 'rgba(61, 184, 201, 0.3)' }}
                     >
                       <div>
                         <div className="flex items-center gap-2 mb-1">
@@ -1546,18 +1843,17 @@ export default function AdminDashboard() {
                             {emp.full_name || emp.id.slice(0, 8)}
                           </span>
                           <span
-                            className={`text-xs px-2 py-0.5 rounded font-semibold uppercase ${
-                              emp.role === 'admin'
-                                ? 'bg-purple-500/10 text-purple-400'
-                                : emp.role === 'cashier'
-                                ? 'bg-sky-500/10 text-sky-400'
-                                : 'bg-amber-500/10 text-amber-400'
-                            }`}
+                            className="text-xs px-2 py-0.5 rounded font-semibold uppercase border"
+                            style={{
+                              backgroundColor: 'rgba(61, 184, 201, 0.15)',
+                              color: brand.cyan,
+                              borderColor: 'rgba(61, 184, 201, 0.3)',
+                            }}
                           >
                             {emp.role}
                           </span>
                         </div>
-                        <span className="text-xs text-slate-500">
+                        <span className="text-xs" style={{ color: '#5d7285' }}>
                           Registrado el: {new Date(emp.created_at).toLocaleDateString()}
                         </span>
                       </div>
@@ -1568,7 +1864,12 @@ export default function AdminDashboard() {
                             setEditingEmployee(emp);
                             setUpdatedPassword('');
                           }}
-                          className="bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 px-3 py-1.5 rounded-lg text-xs font-medium transition"
+                          className="border px-3 py-1.5 rounded-lg text-xs font-medium transition"
+                          style={{
+                            backgroundColor: 'rgba(61, 184, 201, 0.15)',
+                            borderColor: 'rgba(61, 184, 201, 0.3)',
+                            color: brand.cyan,
+                          }}
                         >
                           Cambiar Contraseña
                         </button>
@@ -1593,10 +1894,17 @@ export default function AdminDashboard() {
 
         {/* MODAL CAMBIAR CONTRASEÑA */}
         {editingEmployee && (
-          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-slate-800 border border-slate-700 p-6 rounded-2xl max-w-md w-full shadow-2xl space-y-4">
-              <h3 className="text-lg font-bold">Cambiar Contraseña</h3>
-              <p className="text-xs text-slate-400">
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div
+              className="p-6 rounded-2xl max-w-md w-full shadow-2xl space-y-4 border"
+              style={{
+                backgroundColor: brand.slateDark,
+                borderColor: 'rgba(61, 184, 201, 0.3)',
+                boxShadow: '0 25px 60px -20px rgba(61, 184, 201, 0.4)',
+              }}
+            >
+              <h3 className="text-lg font-bold text-white">Cambiar Contraseña</h3>
+              <p className="text-xs" style={{ color: '#8fa3b3' }}>
                 Actualizando credenciales para:{' '}
                 <span className="text-white font-semibold">
                   {editingEmployee.full_name || editingEmployee.id.slice(0, 8)}
@@ -1605,7 +1913,10 @@ export default function AdminDashboard() {
 
               <form onSubmit={handleUpdatePassword} className="space-y-4">
                 <div>
-                  <label className="block text-xs font-semibold uppercase text-slate-400 mb-1">
+                  <label
+                    className="block text-xs font-semibold uppercase mb-1"
+                    style={{ color: '#8fa3b3' }}
+                  >
                     Nueva Contraseña
                   </label>
                   <input
@@ -1614,7 +1925,8 @@ export default function AdminDashboard() {
                     placeholder="Mínimo 6 caracteres"
                     value={updatedPassword}
                     onChange={(e) => setUpdatedPassword(e.target.value)}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-500"
+                    className="w-full rounded-lg px-3 py-2 text-sm text-white border focus:outline-none"
+                    style={{ backgroundColor: '#000000', borderColor: 'rgba(61, 184, 201, 0.3)' }}
                   />
                 </div>
 
@@ -1622,14 +1934,22 @@ export default function AdminDashboard() {
                   <button
                     type="button"
                     onClick={() => setEditingEmployee(null)}
-                    className="bg-slate-700 hover:bg-slate-600 px-4 py-2 rounded-lg text-xs font-medium transition"
+                    className="border px-4 py-2 rounded-lg text-xs font-medium transition"
+                    style={{
+                      backgroundColor: 'rgba(0, 0, 0, 0.3)',
+                      borderColor: 'rgba(61, 184, 201, 0.3)',
+                      color: '#8fa3b3',
+                    }}
                   >
                     Cancelar
                   </button>
                   <button
                     type="submit"
                     disabled={employeeLoading}
-                    className="bg-purple-600 hover:bg-purple-500 px-4 py-2 rounded-lg text-xs font-medium transition"
+                    className="text-white px-4 py-2 rounded-lg text-xs font-medium transition"
+                    style={{
+                      background: `linear-gradient(135deg, ${brand.cyan} 0%, ${brand.steel} 100%)`,
+                    }}
                   >
                     {employeeLoading ? 'Guardando...' : 'Actualizar Contraseña'}
                   </button>
@@ -1641,42 +1961,61 @@ export default function AdminDashboard() {
 
         {/* PESTAÑA: PAID */}
         {activeTab === 'paid' && (
-          <div className="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-xl space-y-6">
+          <div
+            className="p-6 rounded-xl border shadow-xl space-y-6"
+            style={{ backgroundColor: brand.slateDark, borderColor: 'rgba(61, 184, 201, 0.25)' }}
+          >
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
               <div>
-                <h2 className="text-xl font-semibold text-emerald-400">
+                <h2 className="text-xl font-semibold" style={{ color: brand.cyan }}>
                   Historial y Corte por Fecha
                 </h2>
-                <p className="text-xs text-slate-400 mt-0.5">
+                <p className="text-xs mt-0.5" style={{ color: '#8fa3b3' }}>
                   Selecciona un día para auditar los ingresos
                 </p>
               </div>
-              <div className="bg-slate-900 border border-slate-700 px-4 py-2 rounded-xl text-right">
-                <span className="text-xs text-slate-400 block">
+              <div
+                className="px-4 py-2 rounded-xl text-right border"
+                style={{
+                  backgroundColor: 'rgba(16, 185, 129, 0.08)',
+                  borderColor: 'rgba(16, 185, 129, 0.3)',
+                }}
+              >
+                <span className="text-xs block" style={{ color: '#8fa3b3' }}>
                   {dateFilter ? `Ventas del ${dateFilter}` : 'Ventas Totales'}
                 </span>
-                <span className="text-lg font-bold text-emerald-400">
+                <span className="text-lg font-bold" style={{ color: brand.greenBright }}>
                   ${filteredRevenue.toFixed(2)}
                 </span>
               </div>
             </div>
 
-            <div className="bg-slate-900 p-4 rounded-xl border border-slate-700 flex flex-col sm:flex-row gap-3 items-center justify-between">
+            <div
+              className="p-4 rounded-xl border flex flex-col sm:flex-row gap-3 items-center justify-between"
+              style={{ backgroundColor: '#000000', borderColor: 'rgba(61, 184, 201, 0.3)' }}
+            >
               <div className="flex items-center gap-3 w-full sm:w-auto">
                 <div>
-                  <label className="block text-xs font-semibold uppercase text-slate-400 mb-1">
+                  <label
+                    className="block text-xs font-semibold uppercase mb-1"
+                    style={{ color: '#8fa3b3' }}
+                  >
                     Filtrar por Fecha
                   </label>
                   <input
                     type="date"
                     value={dateFilter}
                     onChange={(e) => setDateFilter(e.target.value)}
-                    className="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500"
+                    className="rounded-lg px-3 py-2 text-sm text-white border focus:outline-none"
+                    style={{ backgroundColor: brand.slate, borderColor: 'rgba(61, 184, 201, 0.3)' }}
                   />
                 </div>
                 <button
                   onClick={setTodayFilter}
-                  className="mt-5 bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-2 rounded-lg text-xs font-semibold transition h-[38px]"
+                  className="mt-5 text-white px-3 py-2 rounded-lg text-xs font-semibold transition h-[38px]"
+                  style={{
+                    background: `linear-gradient(135deg, ${brand.cyan} 0%, ${brand.steel} 100%)`,
+                  }}
                 >
                   Ver Hoy
                 </button>
@@ -1684,7 +2023,12 @@ export default function AdminDashboard() {
               {dateFilter && (
                 <button
                   onClick={() => setDateFilter('')}
-                  className="mt-5 sm:mt-0 bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2 rounded-lg text-xs font-medium border border-slate-700 transition h-[38px]"
+                  className="mt-5 sm:mt-0 border px-4 py-2 rounded-lg text-xs font-medium transition h-[38px]"
+                  style={{
+                    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+                    borderColor: 'rgba(61, 184, 201, 0.3)',
+                    color: '#8fa3b3',
+                  }}
                 >
                   Mostrar Todo
                 </button>
@@ -1692,7 +2036,7 @@ export default function AdminDashboard() {
             </div>
 
             {filteredPaidOrders.length === 0 ? (
-              <p className="text-slate-400 text-sm py-12 text-center">
+              <p className="text-sm py-12 text-center" style={{ color: '#8fa3b3' }}>
                 No se encontraron ventas registradas.
               </p>
             ) : (
@@ -1706,19 +2050,29 @@ export default function AdminDashboard() {
                   return (
                     <div
                       key={order.id}
-                      className="bg-slate-900 border border-slate-700 p-4 rounded-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4"
+                      className="p-4 rounded-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border"
+                      style={{ backgroundColor: '#000000', borderColor: 'rgba(61, 184, 201, 0.3)' }}
                     >
                       <div>
                         <div className="flex items-center gap-2 mb-1">
-                          <span className="font-bold text-emerald-400 text-lg">
+                          <span className="font-bold text-lg" style={{ color: brand.cyan }}>
                             {order.table_name}
                           </span>
-                          <span className="text-xs bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded font-semibold">
+                          <span
+                            className="text-xs px-2 py-0.5 rounded font-semibold border"
+                            style={{
+                              backgroundColor: 'rgba(16, 185, 129, 0.15)',
+                              color: brand.greenBright,
+                              borderColor: 'rgba(16, 185, 129, 0.3)',
+                            }}
+                          >
                             Pagada
                           </span>
-                          <span className="text-xs text-slate-400">{dateStr}</span>
+                          <span className="text-xs" style={{ color: '#8fa3b3' }}>
+                            {dateStr}
+                          </span>
                         </div>
-                        <div className="flex flex-wrap gap-1.5 text-xs text-slate-300">
+                        <div className="flex flex-wrap gap-1.5 text-xs">
                           {order.order_items?.map((item, idx) => {
                             const rawP = item.products;
                             const pName = Array.isArray(rawP)
@@ -1727,7 +2081,12 @@ export default function AdminDashboard() {
                             return (
                               <span
                                 key={idx}
-                                className="bg-slate-800 px-2 py-1 rounded border border-slate-700"
+                                className="px-2 py-1 rounded border"
+                                style={{
+                                  backgroundColor: brand.slate,
+                                  borderColor: 'rgba(61, 184, 201, 0.2)',
+                                  color: '#FFFFFF',
+                                }}
                               >
                                 • {pName} (${item.price})
                               </span>
@@ -1736,8 +2095,10 @@ export default function AdminDashboard() {
                         </div>
                       </div>
                       <div className="text-right">
-                        <span className="text-xs text-slate-400 block">Total</span>
-                        <span className="text-xl font-black text-emerald-400">
+                        <span className="text-xs block" style={{ color: '#8fa3b3' }}>
+                          Total
+                        </span>
+                        <span className="text-xl font-black" style={{ color: brand.greenBright }}>
                           ${orderTotal.toFixed(2)}
                         </span>
                       </div>
@@ -1751,12 +2112,15 @@ export default function AdminDashboard() {
 
         {/* PESTAÑA: PENDING */}
         {activeTab === 'pending' && (
-          <div className="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-xl">
-            <h2 className="text-xl font-semibold mb-4 text-amber-400">
+          <div
+            className="p-6 rounded-xl border shadow-xl"
+            style={{ backgroundColor: brand.slateDark, borderColor: 'rgba(61, 184, 201, 0.25)' }}
+          >
+            <h2 className="text-xl font-semibold mb-4" style={{ color: brand.amber }}>
               Monitoreo de Mesas Activas
             </h2>
             {pendingOrders.length === 0 ? (
-              <p className="text-slate-400 text-sm py-8 text-center">
+              <p className="text-sm py-8 text-center" style={{ color: '#8fa3b3' }}>
                 No hay mesas ocupadas actualmente en tu bar.
               </p>
             ) : (
@@ -1767,15 +2131,28 @@ export default function AdminDashboard() {
                   return (
                     <div
                       key={order.id}
-                      className="bg-slate-900 border border-slate-700 p-4 rounded-xl space-y-3"
+                      className="p-4 rounded-xl space-y-3 border"
+                      style={{ backgroundColor: '#000000', borderColor: 'rgba(61, 184, 201, 0.3)' }}
                     >
                       <div className="flex justify-between items-center">
-                        <h3 className="font-bold text-amber-400">{order.table_name}</h3>
-                        <span className="text-xs bg-amber-500/10 text-amber-400 px-2 py-0.5 rounded font-semibold">
+                        <h3 className="font-bold" style={{ color: brand.amber }}>
+                          {order.table_name}
+                        </h3>
+                        <span
+                          className="text-xs px-2 py-0.5 rounded font-semibold border"
+                          style={{
+                            backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                            color: brand.amber,
+                            borderColor: 'rgba(245, 158, 11, 0.3)',
+                          }}
+                        >
                           Abierta
                         </span>
                       </div>
-                      <div className="space-y-1 max-h-28 overflow-y-auto text-xs text-slate-300 border-t border-slate-800 pt-2">
+                      <div
+                        className="space-y-1 max-h-28 overflow-y-auto text-xs border-t pt-2"
+                        style={{ color: '#8fa3b3', borderColor: 'rgba(61, 184, 201, 0.2)' }}
+                      >
                         {order.order_items?.map((item, idx) => {
                           const rawP = item.products;
                           const pName = Array.isArray(rawP)
@@ -1784,14 +2161,17 @@ export default function AdminDashboard() {
                           return (
                             <div key={idx} className="flex justify-between">
                               <span>• {pName}</span>
-                              <span className="text-emerald-400">${item.price}</span>
+                              <span style={{ color: brand.cyan }}>${item.price}</span>
                             </div>
                           );
                         })}
                       </div>
-                      <div className="border-t border-slate-800 pt-2 flex justify-between items-center text-sm">
-                        <span className="text-slate-400">Consumo:</span>
-                        <span className="font-black text-emerald-400">
+                      <div
+                        className="border-t pt-2 flex justify-between items-center text-sm"
+                        style={{ borderColor: 'rgba(61, 184, 201, 0.2)' }}
+                      >
+                        <span style={{ color: '#8fa3b3' }}>Consumo:</span>
+                        <span className="font-black" style={{ color: brand.greenBright }}>
                           ${orderTotal.toFixed(2)}
                         </span>
                       </div>
