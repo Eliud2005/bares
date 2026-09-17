@@ -55,10 +55,12 @@ export default function WaiterDashboard() {
   const [tempNote, setTempNote] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
+  const [appAlert, setAppAlert] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+
   const router = useRouter();
   const supabase = createClient();
 
-  // 🎨 Paleta Diamond Code — V2 con profundidad
+  // 🎨 Paleta Diamond Code — Vibrante V2
   const brand = {
     bg: '#0A0F1A',
     surface: '#141B2D',
@@ -81,7 +83,7 @@ export default function WaiterDashboard() {
       data: { session },
     } = await supabase.auth.getSession();
     if (!session) {
-      router.push('/');
+      window.location.href = '/';
       return;
     }
 
@@ -102,9 +104,16 @@ export default function WaiterDashboard() {
 
     const { data: barData } = await supabase
       .from('bars')
-      .select('name')
+      .select('name, is_active')
       .eq('id', barId)
       .single();
+
+    // ✅ Validar que el bar esté activo
+    if (barData && barData.is_active === false) {
+      await supabase.auth.signOut();
+      window.location.href = '/?reason=bar_inactive';
+      return;
+    }
 
     if (barData?.name) setBarName(barData.name);
 
@@ -249,7 +258,10 @@ export default function WaiterDashboard() {
 
       if (orderError) {
         console.error('❌ Error al crear orden:', orderError.message);
-        alert(`No se pudo crear la orden: ${orderError.message}`);
+        setAppAlert({
+          type: 'error',
+          message: `No se pudo crear la orden: ${orderError.message}`,
+        });
         setSubmitting(false);
         return;
       }
@@ -267,8 +279,15 @@ export default function WaiterDashboard() {
 
     if (itemsError) {
       console.error('❌ Error al insertar items:', itemsError.message);
-      alert(`Error al guardar productos: ${itemsError.message}`);
+      setAppAlert({
+        type: 'error',
+        message: `Error al guardar productos: ${itemsError.message}`,
+      });
     } else {
+      setAppAlert({
+        type: 'success',
+        message: `¡${currentOrder.length} ${currentOrder.length === 1 ? 'producto enviado' : 'productos enviados'} a cocina!`,
+      });
       setCurrentOrder([]);
       await loadData();
       setTableSubView('cart');
@@ -291,7 +310,13 @@ export default function WaiterDashboard() {
         className="p-8 text-white min-h-screen flex items-center justify-center"
         style={{ backgroundColor: brand.bg }}
       >
-        Cargando sistema...
+        <div className="flex flex-col items-center gap-3">
+          <span
+            className="inline-block w-8 h-8 border-3 border-t-transparent rounded-full animate-spin"
+            style={{ borderColor: brand.cyan, borderTopColor: 'transparent' }}
+          ></span>
+          <span style={{ color: brand.textSecondary }}>Cargando sistema...</span>
+        </div>
       </div>
     );
 
@@ -336,6 +361,30 @@ export default function WaiterDashboard() {
           style={{ background: `radial-gradient(circle, ${brand.amber} 0%, transparent 70%)` }}
         ></div>
       </div>
+
+      {/* Alert flotante */}
+      {appAlert && (
+        <div className="fixed top-6 right-6 z-50 animate-bounce max-w-sm">
+          <div
+            className={`flex items-center gap-3 px-5 py-4 rounded-2xl shadow-2xl border ${
+              appAlert.type === 'success'
+                ? 'bg-emerald-950/90 border-emerald-500 text-emerald-200'
+                : 'bg-red-950/90 border-red-500 text-red-200'
+            } backdrop-blur-md`}
+          >
+            <span className="text-xl font-bold">
+              {appAlert.type === 'success' ? '✅' : '❌'}
+            </span>
+            <p className="text-sm font-semibold flex-1">{appAlert.message}</p>
+            <button
+              onClick={() => setAppAlert(null)}
+              className="ml-2 text-xs bg-black/20 hover:bg-black/40 px-2.5 py-1 rounded-lg transition shrink-0"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="max-w-md mx-auto relative z-10">
         {/* HEADER */}
@@ -453,7 +502,6 @@ export default function WaiterDashboard() {
                         : `0 10px 25px -10px rgba(0, 0, 0, 0.5)`,
                     }}
                   >
-                    {/* Barra superior de color */}
                     <div
                       className="absolute top-0 left-0 right-0 h-1"
                       style={{ backgroundColor: visual.color }}
@@ -649,14 +697,21 @@ export default function WaiterDashboard() {
                     <button
                       onClick={handleSendOrder}
                       disabled={submitting}
-                      className="w-full font-bold py-3 rounded-xl text-sm transition disabled:opacity-50"
+                      className="w-full font-bold py-3 rounded-xl text-sm transition disabled:opacity-50 flex items-center justify-center gap-2"
                       style={{
                         background: `linear-gradient(135deg, ${brand.green} 0%, #00B888 100%)`,
                         color: '#0A0F1A',
                         boxShadow: `0 10px 25px -10px rgba(0, 224, 164, 0.5)`,
                       }}
                     >
-                      {submitting ? 'Enviando...' : '✓ Confirmar y Enviar'}
+                      {submitting ? (
+                        <>
+                          <span className="inline-block w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin"></span>
+                          Enviando...
+                        </>
+                      ) : (
+                        '✓ Confirmar y Enviar'
+                      )}
                     </button>
                   </div>
                 )}
@@ -752,7 +807,7 @@ export default function WaiterDashboard() {
 
         {/* MODAL NOTA */}
         {activeProductForNote && (
-          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
             <div
               className="w-full max-w-sm p-6 rounded-2xl shadow-2xl space-y-4 border"
               style={{

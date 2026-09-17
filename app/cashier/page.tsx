@@ -27,6 +27,7 @@ type BarInfo = {
   id: string;
   name: string;
   slug?: string;
+  is_active?: boolean;
 };
 
 export default function CashierDashboard() {
@@ -54,16 +55,21 @@ export default function CashierDashboard() {
   const router = useRouter();
   const supabase = createClient();
 
-  // 🎨 Paleta Diamond Code — Vibrante
+  // 🎨 Paleta Diamond Code — Vibrante V2
   const brand = {
-    cyan: '#3DB8C9',
-    cyanHover: '#4DD4E8',
-    steel: '#4A8FB0',
-    slate: '#3A5064',
-    slateDark: '#1E2833',
-    amber: '#F59E0B',
-    green: '#10B981',      // 💰 Verde para dinero
-    greenBright: '#34D399', // Verde claro
+    bg: '#0A0F1A',
+    surface: '#141B2D',
+    surfaceLight: '#1E2842',
+    border: '#2A3654',
+    cyan: '#00E5FF',
+    cyanDark: '#00B8CC',
+    amber: '#FFB84D',
+    green: '#00E0A4',
+    greenBright: '#00E0A4',
+    coral: '#FF6B6B',
+    textPrimary: '#FFFFFF',
+    textSecondary: '#94A3B8',
+    textMuted: '#64748B',
   };
 
   const loadData = async () => {
@@ -71,7 +77,7 @@ export default function CashierDashboard() {
       data: { session },
     } = await supabase.auth.getSession();
     if (!session) {
-      router.push('/');
+      window.location.href = '/';
       return;
     }
 
@@ -97,9 +103,16 @@ export default function CashierDashboard() {
 
     const { data: barData } = await supabase
       .from('bars')
-      .select('id, name, slug')
+      .select('id, name, slug, is_active')
       .eq('id', barId)
       .single();
+
+    // ✅ Validar que el bar esté activo
+    if (barData && barData.is_active === false) {
+      await supabase.auth.signOut();
+      window.location.href = '/?reason=bar_inactive';
+      return;
+    }
 
     if (barData) setBarInfo(barData as BarInfo);
 
@@ -267,9 +280,15 @@ export default function CashierDashboard() {
     return (
       <div
         className="p-8 text-white min-h-screen flex items-center justify-center"
-        style={{ backgroundColor: '#000000' }}
+        style={{ backgroundColor: brand.bg }}
       >
-        Cargando caja...
+        <div className="flex flex-col items-center gap-3">
+          <span
+            className="inline-block w-8 h-8 border-3 border-t-transparent rounded-full animate-spin"
+            style={{ borderColor: brand.cyan, borderTopColor: 'transparent' }}
+          ></span>
+          <span style={{ color: brand.textSecondary }}>Cargando caja...</span>
+        </div>
       </div>
     );
 
@@ -287,13 +306,19 @@ export default function CashierDashboard() {
 
   return (
     <main
-      className="min-h-screen text-white p-6 relative"
-      style={{
-        backgroundColor: '#000000',
-        backgroundImage: `radial-gradient(circle at 15% 10%, rgba(61,184,201,0.10) 0%, transparent 50%), 
-                          radial-gradient(circle at 85% 90%, rgba(16,185,129,0.08) 0%, transparent 50%)`,
-      }}
+      className="min-h-screen text-white p-6 relative overflow-hidden"
+      style={{ backgroundColor: brand.bg }}
     >
+      {/* Grid de fondo */}
+      <div
+        className="absolute inset-0 pointer-events-none opacity-[0.03]"
+        style={{
+          backgroundImage: `linear-gradient(${brand.cyan} 1px, transparent 1px), linear-gradient(90deg, ${brand.cyan} 1px, transparent 1px)`,
+          backgroundSize: '40px 40px',
+        }}
+      ></div>
+
+      {/* Alert flotante */}
       {appAlert && (
         <div className="fixed top-6 right-6 z-50 animate-bounce">
           <div
@@ -317,20 +342,19 @@ export default function CashierDashboard() {
         </div>
       )}
 
-      <div className="max-w-6xl mx-auto">
+      <div className="max-w-6xl mx-auto relative z-10">
         {/* HEADER */}
         <header
           className="flex justify-between items-start mb-8 pb-4 gap-4 flex-wrap border-b"
-          style={{ borderColor: 'rgba(61, 184, 201, 0.3)' }}
+          style={{ borderColor: brand.border }}
         >
           <div className="flex items-start gap-4 min-w-0">
-            {/* ISOTIPO */}
             <div
               className="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 border p-2"
               style={{
                 backgroundColor: '#FFFFFF',
-                borderColor: 'rgba(61, 184, 201, 0.4)',
-                boxShadow: '0 10px 25px -10px rgba(61, 184, 201, 0.6)',
+                borderColor: brand.cyan,
+                boxShadow: `0 10px 25px -10px rgba(0, 229, 255, 0.6)`,
               }}
             >
               <img
@@ -339,16 +363,16 @@ export default function CashierDashboard() {
                 className="w-full h-full object-contain"
                 onError={(e) => {
                   (e.target as HTMLImageElement).src =
-                    'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" fill="none" stroke="%233DB8C9" stroke-width="2.5"><path d="M10 4 L30 4 L36 14 L20 36 L4 14 Z"/><path d="M4 14 L36 14"/><path d="M10 4 L16 14 L20 36"/><path d="M30 4 L24 14 L20 36"/></svg>';
+                    'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" fill="none" stroke="%2300E5FF" stroke-width="2.5"><path d="M10 4 L30 4 L36 14 L20 36 L4 14 Z"/><path d="M4 14 L36 14"/><path d="M10 4 L16 14 L20 36"/><path d="M30 4 L24 14 L20 36"/></svg>';
                 }}
               />
             </div>
 
             <div className="min-w-0">
               <span
-                className="text-xs px-2.5 py-1 rounded-full font-semibold uppercase text-white"
+                className="text-xs px-2.5 py-1 rounded-full font-semibold uppercase text-black"
                 style={{
-                  background: `linear-gradient(135deg, ${brand.cyan} 0%, ${brand.steel} 100%)`,
+                  background: `linear-gradient(135deg, ${brand.cyan} 0%, ${brand.cyanDark} 100%)`,
                 }}
               >
                 Caja - Sucursal
@@ -360,8 +384,8 @@ export default function CashierDashboard() {
                 <span
                   className="text-xs font-mono px-2 py-0.5 rounded border inline-block mt-2"
                   style={{
-                    backgroundColor: brand.slateDark,
-                    borderColor: 'rgba(61, 184, 201, 0.3)',
+                    backgroundColor: brand.surfaceLight,
+                    borderColor: brand.border,
                     color: brand.cyan,
                   }}
                 >
@@ -370,9 +394,15 @@ export default function CashierDashboard() {
               )}
             </div>
           </div>
+
           <button
             onClick={handleLogout}
-            className="bg-red-600 hover:bg-red-500 px-4 py-2 rounded-lg text-sm font-medium transition shrink-0 shadow-lg shadow-red-600/30"
+            className="px-4 py-2 rounded-lg text-sm font-medium transition shrink-0 border"
+            style={{
+              backgroundColor: 'rgba(255, 107, 107, 0.1)',
+              borderColor: 'rgba(255, 107, 107, 0.3)',
+              color: brand.coral,
+            }}
           >
             Cerrar Sesión
           </button>
@@ -380,10 +410,10 @@ export default function CashierDashboard() {
 
         {/* CORTE DEL DÍA */}
         <div
-          className="p-6 rounded-xl mb-6 space-y-4 border"
+          className="p-6 rounded-2xl mb-6 space-y-4 border"
           style={{
-            background: `linear-gradient(135deg, rgba(61, 184, 201, 0.12) 0%, rgba(30, 40, 51, 0.7) 100%)`,
-            borderColor: 'rgba(61, 184, 201, 0.4)',
+            background: `linear-gradient(135deg, rgba(0, 229, 255, 0.08) 0%, ${brand.surface} 100%)`,
+            borderColor: 'rgba(0, 229, 255, 0.3)',
           }}
         >
           <div className="flex items-center justify-between flex-wrap gap-3">
@@ -391,16 +421,16 @@ export default function CashierDashboard() {
               <h2 className="text-lg font-bold" style={{ color: brand.cyan }}>
                 💰 Corte del Día
               </h2>
-              <p className="text-xs mt-0.5" style={{ color: '#8fa3b3' }}>
+              <p className="text-xs mt-0.5" style={{ color: brand.textSecondary }}>
                 Resumen de tus cobros desde las 00:00 de hoy
               </p>
             </div>
             <span
               className="text-xs px-2.5 py-1 rounded-full font-semibold border"
               style={{
-                backgroundColor: 'rgba(61, 184, 201, 0.15)',
+                backgroundColor: 'rgba(0, 229, 255, 0.1)',
                 color: brand.cyan,
-                borderColor: 'rgba(61, 184, 201, 0.3)',
+                borderColor: 'rgba(0, 229, 255, 0.3)',
               }}
             >
               {new Date().toLocaleDateString('es-MX', {
@@ -415,11 +445,11 @@ export default function CashierDashboard() {
             <div
               className="p-4 rounded-xl border"
               style={{
-                backgroundColor: 'rgba(16, 185, 129, 0.08)',
-                borderColor: 'rgba(16, 185, 129, 0.3)',
+                backgroundColor: 'rgba(0, 224, 164, 0.08)',
+                borderColor: 'rgba(0, 224, 164, 0.3)',
               }}
             >
-              <span className="text-xs block mb-1" style={{ color: '#8fa3b3' }}>
+              <span className="text-xs block mb-1" style={{ color: brand.textSecondary }}>
                 Total cobrado
               </span>
               <span className="text-2xl font-black" style={{ color: brand.greenBright }}>
@@ -429,11 +459,11 @@ export default function CashierDashboard() {
             <div
               className="p-4 rounded-xl border"
               style={{
-                backgroundColor: 'rgba(245, 158, 11, 0.08)',
-                borderColor: 'rgba(245, 158, 11, 0.3)',
+                backgroundColor: 'rgba(255, 184, 77, 0.08)',
+                borderColor: 'rgba(255, 184, 77, 0.3)',
               }}
             >
-              <span className="text-xs block mb-1" style={{ color: '#8fa3b3' }}>
+              <span className="text-xs block mb-1" style={{ color: brand.textSecondary }}>
                 Propinas
               </span>
               <span className="text-2xl font-black" style={{ color: brand.amber }}>
@@ -443,11 +473,11 @@ export default function CashierDashboard() {
             <div
               className="p-4 rounded-xl border"
               style={{
-                backgroundColor: 'rgba(61, 184, 201, 0.08)',
-                borderColor: 'rgba(61, 184, 201, 0.3)',
+                backgroundColor: 'rgba(0, 229, 255, 0.08)',
+                borderColor: 'rgba(0, 229, 255, 0.3)',
               }}
             >
-              <span className="text-xs block mb-1" style={{ color: '#8fa3b3' }}>
+              <span className="text-xs block mb-1" style={{ color: brand.textSecondary }}>
                 Mesas cobradas
               </span>
               <span className="text-2xl font-black text-white">{todayCount}</span>
@@ -455,11 +485,11 @@ export default function CashierDashboard() {
             <div
               className="p-4 rounded-xl border"
               style={{
-                backgroundColor: 'rgba(74, 143, 176, 0.08)',
-                borderColor: 'rgba(74, 143, 176, 0.3)',
+                backgroundColor: 'rgba(0, 229, 255, 0.08)',
+                borderColor: 'rgba(0, 229, 255, 0.3)',
               }}
             >
-              <span className="text-xs block mb-1" style={{ color: '#8fa3b3' }}>
+              <span className="text-xs block mb-1" style={{ color: brand.textSecondary }}>
                 Efectivo en caja
               </span>
               <span className="text-2xl font-black" style={{ color: brand.cyan }}>
@@ -473,14 +503,14 @@ export default function CashierDashboard() {
           {(todayByMethod['card'] || todayByMethod['transfer'] || todayByMethod['mixed']) && (
             <div
               className="flex flex-wrap gap-2 pt-2 border-t"
-              style={{ borderColor: 'rgba(61, 184, 201, 0.3)' }}
+              style={{ borderColor: brand.border }}
             >
               {todayByMethod['cash'] > 0 && (
                 <span
                   className="text-xs px-3 py-1 rounded-lg border"
                   style={{
-                    backgroundColor: brand.slateDark,
-                    borderColor: 'rgba(61, 184, 201, 0.3)',
+                    backgroundColor: brand.surfaceLight,
+                    borderColor: brand.border,
                     color: brand.cyan,
                   }}
                 >
@@ -491,8 +521,8 @@ export default function CashierDashboard() {
                 <span
                   className="text-xs px-3 py-1 rounded-lg border"
                   style={{
-                    backgroundColor: brand.slateDark,
-                    borderColor: 'rgba(61, 184, 201, 0.3)',
+                    backgroundColor: brand.surfaceLight,
+                    borderColor: brand.border,
                     color: brand.cyan,
                   }}
                 >
@@ -503,8 +533,8 @@ export default function CashierDashboard() {
                 <span
                   className="text-xs px-3 py-1 rounded-lg border"
                   style={{
-                    backgroundColor: brand.slateDark,
-                    borderColor: 'rgba(61, 184, 201, 0.3)',
+                    backgroundColor: brand.surfaceLight,
+                    borderColor: brand.border,
                     color: brand.cyan,
                   }}
                 >
@@ -515,8 +545,8 @@ export default function CashierDashboard() {
                 <span
                   className="text-xs px-3 py-1 rounded-lg border"
                   style={{
-                    backgroundColor: brand.slateDark,
-                    borderColor: 'rgba(61, 184, 201, 0.3)',
+                    backgroundColor: brand.surfaceLight,
+                    borderColor: brand.border,
                     color: brand.cyan,
                   }}
                 >
@@ -530,10 +560,10 @@ export default function CashierDashboard() {
         {/* RESUMEN RÁPIDO */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           <div
-            className="p-6 rounded-xl border shadow-lg"
-            style={{ backgroundColor: brand.slateDark, borderColor: 'rgba(61, 184, 201, 0.25)' }}
+            className="p-6 rounded-2xl border shadow-lg"
+            style={{ backgroundColor: brand.surface, borderColor: 'rgba(0, 229, 255, 0.3)' }}
           >
-            <h2 className="text-sm font-bold uppercase tracking-wider mb-1" style={{ color: '#8fa3b3' }}>
+            <h2 className="text-sm font-bold uppercase tracking-wider mb-1" style={{ color: brand.textSecondary }}>
               Mesas Ocupadas Actuales
             </h2>
             <p className="text-3xl font-bold" style={{ color: brand.cyan }}>
@@ -541,10 +571,10 @@ export default function CashierDashboard() {
             </p>
           </div>
           <div
-            className="p-6 rounded-xl border shadow-lg"
-            style={{ backgroundColor: brand.slateDark, borderColor: 'rgba(16, 185, 129, 0.25)' }}
+            className="p-6 rounded-2xl border shadow-lg"
+            style={{ backgroundColor: brand.surface, borderColor: 'rgba(0, 224, 164, 0.3)' }}
           >
-            <h2 className="text-sm font-bold uppercase tracking-wider mb-1" style={{ color: '#8fa3b3' }}>
+            <h2 className="text-sm font-bold uppercase tracking-wider mb-1" style={{ color: brand.textSecondary }}>
               Dinero en Cuentas Activas
             </h2>
             <p className="text-3xl font-bold" style={{ color: brand.greenBright }}>
@@ -555,13 +585,13 @@ export default function CashierDashboard() {
 
         {/* CUENTAS POR COBRAR */}
         <div
-          className="p-6 rounded-xl border shadow-xl"
-          style={{ backgroundColor: brand.slateDark, borderColor: 'rgba(61, 184, 201, 0.25)' }}
+          className="p-6 rounded-2xl border shadow-xl"
+          style={{ backgroundColor: brand.surface, borderColor: brand.border }}
         >
           <h2 className="text-xl font-semibold mb-4">Cuentas por Cobrar en Mesas</h2>
 
           {activeOrders.length === 0 ? (
-            <div className="text-center py-12 text-sm" style={{ color: '#8fa3b3' }}>
+            <div className="text-center py-12 text-sm" style={{ color: brand.textSecondary }}>
               No hay cuentas pendientes de pago en este momento.
             </div>
           ) : (
@@ -573,10 +603,15 @@ export default function CashierDashboard() {
                 return (
                   <div
                     key={order.id}
-                    className="rounded-xl p-4 flex flex-col justify-between space-y-4 border"
-                    style={{ backgroundColor: '#000000', borderColor: 'rgba(61, 184, 201, 0.3)' }}
+                    className="rounded-2xl p-4 flex flex-col justify-between space-y-4 border relative overflow-hidden"
+                    style={{ backgroundColor: brand.surfaceLight, borderColor: brand.border }}
                   >
-                    <div>
+                    <div
+                      className="absolute top-0 left-0 right-0 h-1"
+                      style={{ backgroundColor: brand.amber }}
+                    ></div>
+
+                    <div className="mt-1">
                       <div className="flex justify-between items-start mb-2">
                         <h3 className="font-bold text-lg" style={{ color: brand.amber }}>
                           {order.table_name}
@@ -584,9 +619,9 @@ export default function CashierDashboard() {
                         <span
                           className="text-xs px-2 py-0.5 rounded font-semibold border"
                           style={{
-                            backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                            backgroundColor: 'rgba(255, 184, 77, 0.1)',
                             color: brand.amber,
-                            borderColor: 'rgba(245, 158, 11, 0.3)',
+                            borderColor: 'rgba(255, 184, 77, 0.3)',
                           }}
                         >
                           {order.order_items?.length || 0} items
@@ -595,7 +630,7 @@ export default function CashierDashboard() {
 
                       <div
                         className="space-y-1 max-h-32 overflow-y-auto pr-1 text-xs border-t pt-2"
-                        style={{ color: '#8fa3b3', borderColor: 'rgba(61, 184, 201, 0.2)' }}
+                        style={{ color: brand.textSecondary, borderColor: brand.border }}
                       >
                         {order.order_items?.map((item, idx) => {
                           const rawP = item.products;
@@ -614,10 +649,10 @@ export default function CashierDashboard() {
 
                     <div
                       className="border-t pt-3 flex items-center justify-between"
-                      style={{ borderColor: 'rgba(61, 184, 201, 0.2)' }}
+                      style={{ borderColor: brand.border }}
                     >
                       <div>
-                        <span className="text-xs block" style={{ color: '#8fa3b3' }}>
+                        <span className="text-xs block" style={{ color: brand.textSecondary }}>
                           Total a pagar
                         </span>
                         <span className="text-lg font-black" style={{ color: brand.greenBright }}>
@@ -632,10 +667,11 @@ export default function CashierDashboard() {
                           setPaymentMethod('cash');
                           setAppAlert(null);
                         }}
-                        className="text-white font-bold px-4 py-2 rounded-lg text-xs transition shadow-lg"
+                        className="font-bold px-4 py-2 rounded-lg text-xs transition"
                         style={{
-                          background: `linear-gradient(135deg, ${brand.cyan} 0%, ${brand.steel} 100%)`,
-                          boxShadow: '0 10px 20px -10px rgba(61, 184, 201, 0.6)',
+                          background: `linear-gradient(135deg, ${brand.cyan} 0%, ${brand.cyanDark} 100%)`,
+                          color: '#0A0F1A',
+                          boxShadow: '0 10px 20px -10px rgba(0, 229, 255, 0.6)',
                         }}
                       >
                         Cobrar Mesa
@@ -654,14 +690,14 @@ export default function CashierDashboard() {
             <div
               className="w-full max-w-md p-6 rounded-2xl shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto border"
               style={{
-                backgroundColor: brand.slateDark,
-                borderColor: 'rgba(61, 184, 201, 0.4)',
-                boxShadow: '0 25px 60px -20px rgba(61, 184, 201, 0.4)',
+                backgroundColor: brand.surface,
+                borderColor: brand.cyan,
+                boxShadow: '0 25px 60px -20px rgba(0, 229, 255, 0.4)',
               }}
             >
               <div
                 className="flex justify-between items-center border-b pb-3"
-                style={{ borderColor: 'rgba(61, 184, 201, 0.3)' }}
+                style={{ borderColor: brand.border }}
               >
                 <div>
                   <span className="text-xs font-semibold uppercase" style={{ color: brand.cyan }}>
@@ -680,9 +716,9 @@ export default function CashierDashboard() {
               {/* Desglose */}
               <div
                 className="space-y-2 max-h-40 overflow-y-auto pr-1 p-3 rounded-xl border"
-                style={{ backgroundColor: '#000000', borderColor: 'rgba(61, 184, 201, 0.25)' }}
+                style={{ backgroundColor: brand.surfaceLight, borderColor: brand.border }}
               >
-                <span className="text-xs font-bold uppercase" style={{ color: '#8fa3b3' }}>
+                <span className="text-xs font-bold uppercase" style={{ color: brand.textSecondary }}>
                   Resumen de la cuenta
                 </span>
                 {selectedOrder.order_items?.map((item, idx) => {
@@ -711,9 +747,9 @@ export default function CashierDashboard() {
               {/* Subtotal */}
               <div
                 className="flex justify-between items-center px-4 py-3 rounded-xl border"
-                style={{ backgroundColor: '#000000', borderColor: 'rgba(61, 184, 201, 0.25)' }}
+                style={{ backgroundColor: brand.surfaceLight, borderColor: brand.border }}
               >
-                <span className="text-sm font-semibold" style={{ color: '#8fa3b3' }}>
+                <span className="text-sm font-semibold" style={{ color: brand.textSecondary }}>
                   Subtotal:
                 </span>
                 <span className="text-lg font-bold text-white">
@@ -724,9 +760,9 @@ export default function CashierDashboard() {
               {/* Propina */}
               <div
                 className="p-4 rounded-xl border space-y-3"
-                style={{ backgroundColor: '#000000', borderColor: 'rgba(61, 184, 201, 0.25)' }}
+                style={{ backgroundColor: brand.surfaceLight, borderColor: brand.border }}
               >
-                <label className="block text-xs font-semibold uppercase" style={{ color: '#8fa3b3' }}>
+                <label className="block text-xs font-semibold uppercase" style={{ color: brand.textSecondary }}>
                   Propina (Opcional)
                 </label>
                 <div className="flex gap-2 flex-wrap">
@@ -746,15 +782,15 @@ export default function CashierDashboard() {
                         backgroundColor:
                           tip === (pct === 0 ? '' : ((selectedOrderSubtotal * pct) / 100).toFixed(2))
                             ? brand.amber
-                            : 'rgba(0, 0, 0, 0.4)',
+                            : brand.bg,
                         color:
                           tip === (pct === 0 ? '' : ((selectedOrderSubtotal * pct) / 100).toFixed(2))
-                            ? '#000000'
-                            : '#8fa3b3',
+                            ? '#0A0F1A'
+                            : brand.textSecondary,
                         borderColor:
                           tip === (pct === 0 ? '' : ((selectedOrderSubtotal * pct) / 100).toFixed(2))
                             ? 'transparent'
-                            : 'rgba(61, 184, 201, 0.3)',
+                            : brand.border,
                       }}
                     >
                       {pct === 0 ? 'Sin propina' : `${pct}%`}
@@ -768,16 +804,16 @@ export default function CashierDashboard() {
                   value={tip}
                   onChange={(e) => setTip(e.target.value)}
                   className="w-full rounded-xl px-4 py-2.5 text-white text-lg font-bold focus:outline-none border"
-                  style={{ backgroundColor: '#000000', borderColor: 'rgba(61, 184, 201, 0.3)' }}
+                  style={{ backgroundColor: brand.bg, borderColor: brand.border }}
                 />
               </div>
 
               {/* Método de pago */}
               <div
                 className="p-4 rounded-xl border space-y-3"
-                style={{ backgroundColor: '#000000', borderColor: 'rgba(61, 184, 201, 0.25)' }}
+                style={{ backgroundColor: brand.surfaceLight, borderColor: brand.border }}
               >
-                <label className="block text-xs font-semibold uppercase" style={{ color: '#8fa3b3' }}>
+                <label className="block text-xs font-semibold uppercase" style={{ color: brand.textSecondary }}>
                   Método de pago
                 </label>
                 <div className="grid grid-cols-3 gap-2">
@@ -796,10 +832,10 @@ export default function CashierDashboard() {
                       style={{
                         background:
                           paymentMethod === m.key
-                            ? `linear-gradient(135deg, ${brand.cyan} 0%, ${brand.steel} 100%)`
-                            : 'rgba(0, 0, 0, 0.4)',
-                        color: paymentMethod === m.key ? '#FFFFFF' : '#8fa3b3',
-                        borderColor: paymentMethod === m.key ? 'transparent' : 'rgba(61, 184, 201, 0.3)',
+                            ? `linear-gradient(135deg, ${brand.cyan} 0%, ${brand.cyanDark} 100%)`
+                            : brand.bg,
+                        color: paymentMethod === m.key ? '#0A0F1A' : brand.textSecondary,
+                        borderColor: paymentMethod === m.key ? 'transparent' : brand.border,
                       }}
                     >
                       {m.label}
@@ -812,10 +848,10 @@ export default function CashierDashboard() {
               {paymentMethod === 'cash' && (
                 <div
                   className="p-4 rounded-xl border space-y-3"
-                  style={{ backgroundColor: '#000000', borderColor: 'rgba(61, 184, 201, 0.25)' }}
+                  style={{ backgroundColor: brand.surfaceLight, borderColor: brand.border }}
                 >
                   <div className="flex justify-between items-center">
-                    <span className="text-sm font-semibold" style={{ color: '#8fa3b3' }}>
+                    <span className="text-sm font-semibold" style={{ color: brand.textSecondary }}>
                       Total a pagar:
                     </span>
                     <span className="text-2xl font-black" style={{ color: brand.greenBright }}>
@@ -824,7 +860,7 @@ export default function CashierDashboard() {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold uppercase mb-1" style={{ color: '#8fa3b3' }}>
+                    <label className="block text-xs font-semibold uppercase mb-1" style={{ color: brand.textSecondary }}>
                       Efectivo recibido ($)
                     </label>
                     <input
@@ -834,7 +870,7 @@ export default function CashierDashboard() {
                       value={cashReceived}
                       onChange={(e) => setCashReceived(e.target.value)}
                       className="w-full rounded-xl px-4 py-2.5 text-white text-lg font-bold focus:outline-none border"
-                      style={{ backgroundColor: '#000000', borderColor: 'rgba(61, 184, 201, 0.3)' }}
+                      style={{ backgroundColor: brand.bg, borderColor: brand.border }}
                       autoFocus
                     />
                   </div>
@@ -842,16 +878,18 @@ export default function CashierDashboard() {
                   {cashNum > 0 && (
                     <div
                       className="flex justify-between items-center pt-2 border-t"
-                      style={{ borderColor: 'rgba(61, 184, 201, 0.2)' }}
+                      style={{ borderColor: brand.border }}
                     >
-                      <span className="text-sm font-semibold" style={{ color: '#8fa3b3' }}>
+                      <span className="text-sm font-semibold" style={{ color: brand.textSecondary }}>
                         Cambio a devolver:
                       </span>
                       <span
-                        className={`text-xl font-bold ${
-                          cashNum >= selectedOrderTotal ? '' : 'text-red-400'
-                        }`}
-                        style={cashNum >= selectedOrderTotal ? { color: brand.cyan } : {}}
+                        className="text-xl font-bold"
+                        style={
+                          cashNum >= selectedOrderTotal
+                            ? { color: brand.cyan }
+                            : { color: brand.coral }
+                        }
                       >
                         {cashNum >= selectedOrderTotal
                           ? `$${changeDue.toFixed(2)}`
@@ -866,9 +904,9 @@ export default function CashierDashboard() {
               {paymentMethod !== 'cash' && (
                 <div
                   className="p-4 rounded-xl border flex justify-between items-center"
-                  style={{ backgroundColor: '#000000', borderColor: 'rgba(61, 184, 201, 0.25)' }}
+                  style={{ backgroundColor: brand.surfaceLight, borderColor: brand.border }}
                 >
-                  <span className="text-sm font-semibold" style={{ color: '#8fa3b3' }}>
+                  <span className="text-sm font-semibold" style={{ color: brand.textSecondary }}>
                     Total a cobrar:
                   </span>
                   <span className="text-2xl font-black" style={{ color: brand.greenBright }}>
@@ -881,11 +919,11 @@ export default function CashierDashboard() {
               <div className="flex gap-3 pt-2">
                 <button
                   onClick={() => setSelectedOrder(null)}
-                  className="w-1/2 border font-medium py-3 rounded-xl text-sm transition"
+                  className="w-1/2 font-medium py-3 rounded-xl text-sm transition border"
                   style={{
-                    backgroundColor: 'rgba(0, 0, 0, 0.3)',
-                    borderColor: 'rgba(61, 184, 201, 0.3)',
-                    color: '#8fa3b3',
+                    backgroundColor: brand.surfaceLight,
+                    borderColor: brand.border,
+                    color: brand.textSecondary,
                   }}
                 >
                   Cancelar
@@ -896,13 +934,21 @@ export default function CashierDashboard() {
                     processing ||
                     (paymentMethod === 'cash' && cashNum < selectedOrderTotal)
                   }
-                  className="w-1/2 text-white font-bold py-3 rounded-xl text-sm transition shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-1/2 font-bold py-3 rounded-xl text-sm transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   style={{
-                    background: `linear-gradient(135deg, ${brand.cyan} 0%, ${brand.steel} 100%)`,
-                    boxShadow: '0 10px 25px -10px rgba(61, 184, 201, 0.6)',
+                    background: `linear-gradient(135deg, ${brand.cyan} 0%, ${brand.cyanDark} 100%)`,
+                    color: '#0A0F1A',
+                    boxShadow: '0 10px 25px -10px rgba(0, 229, 255, 0.6)',
                   }}
                 >
-                  {processing ? 'Procesando...' : 'Cobrar y Liberar Mesa'}
+                  {processing ? (
+                    <>
+                      <span className="inline-block w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin"></span>
+                      Procesando...
+                    </>
+                  ) : (
+                    'Cobrar y Liberar Mesa'
+                  )}
                 </button>
               </div>
             </div>
