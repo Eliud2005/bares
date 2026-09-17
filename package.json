@@ -4,11 +4,12 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "next build && serwist build",
     "start": "next start",
     "lint": "eslint"
   },
   "dependencies": {
+    "@serwist/vite": "^9.5.12",
     "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.116.0",
     "next": "16.3.5",
@@ -16,12 +17,16 @@
     "react-dom": "19.2.8"
   },
   "devDependencies": {
+    "@serwist/cli": "^9.5.12",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "concurrently": "^10.0.5",
+    "esbuild": "^0.28.2",
     "eslint": "^9",
     "eslint-config-next": "16.3.5",
+    "serwist": "^9.5.12",
     "tailwindcss": "^4",
     "typescript": "^5"
   }
