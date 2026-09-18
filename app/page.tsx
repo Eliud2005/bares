@@ -118,6 +118,8 @@ function LoginContent() {
       window.location.href = '/cashier'
     } else if (role === 'waiter') {
       window.location.href = '/waiter'
+    } else if (role === 'cook') {
+      window.location.href = '/kitchen'
     } else {
       setErrorMsg(
         `Rol desconocido: "${role}". Contacta a soporte técnico.`

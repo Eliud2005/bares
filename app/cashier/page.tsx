@@ -125,6 +125,7 @@ export default function CashierDashboard() {
       setProductsMap(new Map(productsData.map((p) => [p.id, p.name])));
     }
 
+    // 🆕 Ahora trae también las órdenes en 'preparing'
     const { data: ordersData, error } = await supabase
       .from('orders')
       .select(`
@@ -142,7 +143,7 @@ export default function CashierDashboard() {
         )
       `)
       .eq('bar_id', barId)
-      .in('status', ['pending', 'ready'])
+      .in('status', ['pending', 'preparing', 'ready'])
       .order('table_name', { ascending: true });
 
     if (error) {
@@ -273,6 +274,34 @@ export default function CashierDashboard() {
       setAppAlert({ type: 'error', message: 'Error al cobrar: ' + err.message });
     } finally {
       setProcessing(false);
+    }
+  };
+
+  // 🆕 Helper para badge de estado
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'ready':
+        return {
+          label: '✓ Lista',
+          color: brand.green,
+          bg: 'rgba(0, 224, 164, 0.1)',
+          border: 'rgba(0, 224, 164, 0.3)',
+        };
+      case 'preparing':
+        return {
+          label: '🔥 Preparando',
+          color: brand.amber,
+          bg: 'rgba(255, 184, 77, 0.1)',
+          border: 'rgba(255, 184, 77, 0.3)',
+        };
+      case 'pending':
+      default:
+        return {
+          label: '⏳ Pendiente',
+          color: brand.cyan,
+          bg: 'rgba(0, 229, 255, 0.1)',
+          border: 'rgba(0, 229, 255, 0.3)',
+        };
     }
   };
 
@@ -599,6 +628,7 @@ export default function CashierDashboard() {
               {activeOrders.map((order) => {
                 const orderTotal =
                   order.order_items?.reduce((sum, item) => sum + Number(item.price), 0) || 0;
+                const badge = getStatusBadge(order.status);
 
                 return (
                   <div
@@ -606,26 +636,40 @@ export default function CashierDashboard() {
                     className="rounded-2xl p-4 flex flex-col justify-between space-y-4 border relative overflow-hidden"
                     style={{ backgroundColor: brand.surfaceLight, borderColor: brand.border }}
                   >
+                    {/* Barra superior con color del status */}
                     <div
                       className="absolute top-0 left-0 right-0 h-1"
-                      style={{ backgroundColor: brand.amber }}
+                      style={{ backgroundColor: badge.color }}
                     ></div>
 
                     <div className="mt-1">
-                      <div className="flex justify-between items-start mb-2">
+                      <div className="flex justify-between items-start mb-2 flex-wrap gap-2">
                         <h3 className="font-bold text-lg" style={{ color: brand.amber }}>
                           {order.table_name}
                         </h3>
-                        <span
-                          className="text-xs px-2 py-0.5 rounded font-semibold border"
-                          style={{
-                            backgroundColor: 'rgba(255, 184, 77, 0.1)',
-                            color: brand.amber,
-                            borderColor: 'rgba(255, 184, 77, 0.3)',
-                          }}
-                        >
-                          {order.order_items?.length || 0} items
-                        </span>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {/* 🆕 Badge de estado de cocina */}
+                          <span
+                            className="text-xs px-2 py-0.5 rounded font-semibold border"
+                            style={{
+                              backgroundColor: badge.bg,
+                              color: badge.color,
+                              borderColor: badge.border,
+                            }}
+                          >
+                            {badge.label}
+                          </span>
+                          <span
+                            className="text-xs px-2 py-0.5 rounded font-semibold border"
+                            style={{
+                              backgroundColor: 'rgba(255, 184, 77, 0.1)',
+                              color: brand.amber,
+                              borderColor: 'rgba(255, 184, 77, 0.3)',
+                            }}
+                          >
+                            {order.order_items?.length || 0} items
+                          </span>
+                        </div>
                       </div>
 
                       <div
@@ -703,7 +747,24 @@ export default function CashierDashboard() {
                   <span className="text-xs font-semibold uppercase" style={{ color: brand.cyan }}>
                     Punto de Cobro
                   </span>
-                  <h3 className="text-xl font-bold text-white">{selectedOrder.table_name}</h3>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <h3 className="text-xl font-bold text-white">{selectedOrder.table_name}</h3>
+                    {(() => {
+                      const b = getStatusBadge(selectedOrder.status);
+                      return (
+                        <span
+                          className="text-xs px-2 py-0.5 rounded font-semibold border"
+                          style={{
+                            backgroundColor: b.bg,
+                            color: b.color,
+                            borderColor: b.border,
+                          }}
+                        >
+                          {b.label}
+                        </span>
+                      );
+                    })()}
+                  </div>
                 </div>
                 <button
                   onClick={() => setSelectedOrder(null)}

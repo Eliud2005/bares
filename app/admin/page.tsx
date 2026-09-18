@@ -96,7 +96,7 @@ export default function AdminDashboard() {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [newEmail, setNewEmail] = useState('');
   const [newPassword, setNewPassword] = useState('');
-  const [newRole, setNewRole] = useState<'cashier' | 'waiter'>('waiter');
+  const [newRole, setNewRole] = useState<'cashier' | 'waiter' | 'cook'>('waiter');
   const [employeeLoading, setEmployeeLoading] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
   const [updatedPassword, setUpdatedPassword] = useState('');
@@ -494,7 +494,8 @@ export default function AdminDashboard() {
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Error al crear empleado');
 
-      setAlertInfo({ type: 'success', message: '¡Empleado creado con éxito!' });
+      const roleName = newRole === 'cook' ? 'Cocinero' : newRole === 'cashier' ? 'Cajero' : 'Mesero';
+      setAlertInfo({ type: 'success', message: `¡${roleName} creado con éxito!` });
       setNewEmail('');
       setNewPassword('');
       loadAdminData();
@@ -1913,7 +1914,7 @@ export default function AdminDashboard() {
               style={{ backgroundColor: brand.surface, borderColor: brand.border }}
             >
               <h2 className="text-xl font-semibold mb-4" style={{ color: brand.cyan }}>
-                Agregar Nuevo Mesero o Cajero
+                Agregar Nuevo Empleado
               </h2>
               <form
                 onSubmit={handleCreateEmployee}
@@ -1962,12 +1963,13 @@ export default function AdminDashboard() {
                   </label>
                   <select
                     value={newRole}
-                    onChange={(e) => setNewRole(e.target.value as 'cashier' | 'waiter')}
+                    onChange={(e) => setNewRole(e.target.value as 'cashier' | 'waiter' | 'cook')}
                     className="w-full rounded-lg px-3 py-2 text-sm text-white border focus:outline-none"
                     style={{ backgroundColor: brand.surfaceLight, borderColor: brand.border }}
                   >
-                    <option value="waiter">Mesero</option>
-                    <option value="cashier">Cajero</option>
+                    <option value="waiter">🍽️ Mesero</option>
+                    <option value="cashier">💰 Cajero</option>
+                    <option value="cook">🍳 Cocinero</option>
                   </select>
                 </div>
                 <button
@@ -1995,66 +1997,88 @@ export default function AdminDashboard() {
                 </p>
               ) : (
                 <div className="space-y-3">
-                  {employees.map((emp) => (
-                    <div
-                      key={emp.id}
-                      className="p-4 rounded-2xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border"
-                      style={{ backgroundColor: brand.surfaceLight, borderColor: brand.border }}
-                    >
-                      <div>
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="font-bold text-white text-base">
-                            {emp.full_name || emp.id.slice(0, 8)}
-                          </span>
-                          <span
-                            className="text-xs px-2 py-0.5 rounded font-semibold uppercase border"
+                  {employees.map((emp) => {
+                    const roleConfig =
+                      emp.role === 'cook'
+                        ? { emoji: '🍳', label: 'Cocinero', color: brand.amber }
+                        : emp.role === 'cashier'
+                        ? { emoji: '💰', label: 'Cajero', color: brand.green }
+                        : emp.role === 'admin'
+                        ? { emoji: '👑', label: 'Admin', color: brand.cyan }
+                        : { emoji: '🍽️', label: 'Mesero', color: brand.cyan };
+
+                    return (
+                      <div
+                        key={emp.id}
+                        className="p-4 rounded-2xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border"
+                        style={{ backgroundColor: brand.surfaceLight, borderColor: brand.border }}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div
+                            className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl shrink-0 border"
                             style={{
-                              backgroundColor: 'rgba(0, 229, 255, 0.1)',
-                              color: brand.cyan,
-                              borderColor: 'rgba(0, 229, 255, 0.3)',
+                              backgroundColor: `${roleConfig.color}15`,
+                              borderColor: `${roleConfig.color}40`,
                             }}
                           >
-                            {emp.role}
-                          </span>
+                            {roleConfig.emoji}
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2 mb-1 flex-wrap">
+                              <span className="font-bold text-white text-base">
+                                {emp.full_name || emp.id.slice(0, 8)}
+                              </span>
+                              <span
+                                className="text-xs px-2 py-0.5 rounded font-semibold uppercase border"
+                                style={{
+                                  backgroundColor: `${roleConfig.color}15`,
+                                  color: roleConfig.color,
+                                  borderColor: `${roleConfig.color}40`,
+                                }}
+                              >
+                                {roleConfig.label}
+                              </span>
+                            </div>
+                            <span className="text-xs" style={{ color: brand.textMuted }}>
+                              Registrado el: {new Date(emp.created_at).toLocaleDateString()}
+                            </span>
+                          </div>
                         </div>
-                        <span className="text-xs" style={{ color: brand.textMuted }}>
-                          Registrado el: {new Date(emp.created_at).toLocaleDateString()}
-                        </span>
-                      </div>
 
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => {
-                            setEditingEmployee(emp);
-                            setUpdatedPassword('');
-                          }}
-                          className="border px-3 py-1.5 rounded-lg text-xs font-medium transition"
-                          style={{
-                            backgroundColor: 'rgba(0, 229, 255, 0.1)',
-                            borderColor: 'rgba(0, 229, 255, 0.3)',
-                            color: brand.cyan,
-                          }}
-                        >
-                          Cambiar Contraseña
-                        </button>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => {
+                              setEditingEmployee(emp);
+                              setUpdatedPassword('');
+                            }}
+                            className="border px-3 py-1.5 rounded-lg text-xs font-medium transition"
+                            style={{
+                              backgroundColor: 'rgba(0, 229, 255, 0.1)',
+                              borderColor: 'rgba(0, 229, 255, 0.3)',
+                              color: brand.cyan,
+                            }}
+                          >
+                            Cambiar Contraseña
+                          </button>
 
-                        <button
-                          onClick={() =>
-                            handleDeleteEmployee(emp.id, emp.full_name || emp.id.slice(0, 8))
-                          }
-                          disabled={employeeLoading}
-                          className="border px-3 py-1.5 rounded-lg text-xs font-medium transition"
-                          style={{
-                            backgroundColor: 'rgba(255, 107, 107, 0.1)',
-                            borderColor: 'rgba(255, 107, 107, 0.3)',
-                            color: brand.coral,
-                          }}
-                        >
-                          Eliminar
-                        </button>
+                          <button
+                            onClick={() =>
+                              handleDeleteEmployee(emp.id, emp.full_name || emp.id.slice(0, 8))
+                            }
+                            disabled={employeeLoading}
+                            className="border px-3 py-1.5 rounded-lg text-xs font-medium transition"
+                            style={{
+                              backgroundColor: 'rgba(255, 107, 107, 0.1)',
+                              borderColor: 'rgba(255, 107, 107, 0.3)',
+                              color: brand.coral,
+                            }}
+                          >
+                            Eliminar
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>

@@ -139,6 +139,7 @@ export default function WaiterDashboard() {
 
     if (tablesData) setTables(tablesData as Table[]);
 
+    // Traer órdenes activas: pending, preparing Y ready
     const { data: ordersData, error } = await supabase
       .from('orders')
       .select(`
@@ -155,7 +156,7 @@ export default function WaiterDashboard() {
         )
       `)
       .eq('bar_id', barId)
-      .in('status', ['pending', 'ready']);
+      .in('status', ['pending', 'preparing', 'ready']);
 
     if (error) {
       console.error('❌ Error cargando órdenes:', error.message);
@@ -229,7 +230,7 @@ export default function WaiterDashboard() {
         .select('id, table_name, status, bar_id')
         .eq('bar_id', currentBarId)
         .eq('table_name', selectedTable)
-        .in('status', ['pending', 'ready'])
+        .in('status', ['pending', 'preparing', 'ready'])
         .maybeSingle();
 
       if (existingDbOrder) {
@@ -286,7 +287,7 @@ export default function WaiterDashboard() {
     } else {
       setAppAlert({
         type: 'success',
-        message: `¡${currentOrder.length} ${currentOrder.length === 1 ? 'producto enviado' : 'productos enviados'} a cocina!`,
+        message: `¡${currentOrder.length} ${currentOrder.length === 1 ? 'producto enviado' : 'productos enviados'} a cocina! 🍳`,
       });
       setCurrentOrder([]);
       await loadData();
@@ -324,9 +325,19 @@ export default function WaiterDashboard() {
 
   const getTableVisualStatus = (table: Table) => {
     const tableName = getTableName(table.table_number);
-    if (isTableBusy(tableName)) {
+    const order = activeTables[tableName];
+
+    if (order) {
+      // Si tiene orden, ver el status específico
+      if (order.status === 'ready') {
+        return { label: '✓ Lista para servir', color: brand.green, pulse: true };
+      }
+      if (order.status === 'preparing') {
+        return { label: '🔥 En preparación', color: brand.amber, pulse: true };
+      }
       return { label: 'Ocupada', color: brand.amber, pulse: true };
     }
+
     if (table.status === 'cleaning') {
       return { label: 'Limpieza', color: brand.cyan, pulse: false };
     }
@@ -479,6 +490,8 @@ export default function WaiterDashboard() {
                 const tableName = getTableName(table.table_number);
                 const activeOrder = activeTables[tableName];
                 const isBusy = !!activeOrder;
+                const isReady = activeOrder?.status === 'ready';
+                const isPreparing = activeOrder?.status === 'preparing';
                 const itemCount = activeOrder?.order_items?.length || 0;
                 const visual = getTableVisualStatus(table);
 
@@ -491,13 +504,23 @@ export default function WaiterDashboard() {
                     }}
                     className="p-4 rounded-2xl cursor-pointer transition flex flex-col justify-between h-28 border relative overflow-hidden"
                     style={{
-                      backgroundColor: brand.surface,
-                      borderColor: isBusy
+                      backgroundColor: isReady
+                        ? 'rgba(0, 224, 164, 0.08)'
+                        : isPreparing
+                        ? 'rgba(255, 184, 77, 0.08)'
+                        : brand.surface,
+                      borderColor: isReady
+                        ? brand.green
+                        : isPreparing
+                        ? brand.amber
+                        : isBusy
                         ? brand.amber
                         : table.status === 'cleaning'
                         ? brand.cyan
                         : brand.border,
-                      boxShadow: isBusy
+                      boxShadow: isReady
+                        ? `0 10px 25px -10px rgba(0, 224, 164, 0.5)`
+                        : isBusy
                         ? `0 10px 25px -10px rgba(255, 184, 77, 0.4)`
                         : `0 10px 25px -10px rgba(0, 0, 0, 0.5)`,
                     }}
@@ -519,7 +542,8 @@ export default function WaiterDashboard() {
                     </div>
                     <div>
                       <p className="text-xs font-semibold" style={{ color: visual.color }}>
-                        {isBusy ? `Ocupada (${itemCount} items)` : visual.label}
+                        {isBusy ? visual.label : visual.label}
+                        {isBusy && ` (${itemCount} items)`}
                       </p>
                     </div>
                   </div>
@@ -533,6 +557,48 @@ export default function WaiterDashboard() {
             {/* CUENTA */}
             {tableSubView === 'cart' && (
               <div className="space-y-4">
+                {/* Banner de status si la orden está lista */}
+                {activeTables[selectedTable]?.status === 'ready' && (
+                  <div
+                    className="p-4 rounded-2xl border flex items-center gap-3 animate-pulse"
+                    style={{
+                      backgroundColor: 'rgba(0, 224, 164, 0.15)',
+                      borderColor: brand.green,
+                      boxShadow: `0 10px 30px -10px rgba(0, 224, 164, 0.6)`,
+                    }}
+                  >
+                    <span className="text-3xl">🔔</span>
+                    <div>
+                      <p className="font-bold text-sm" style={{ color: brand.green }}>
+                        ¡Orden lista para servir!
+                      </p>
+                      <p className="text-xs mt-0.5" style={{ color: '#8ff5d9' }}>
+                        La cocina ya terminó de prepararla
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {activeTables[selectedTable]?.status === 'preparing' && (
+                  <div
+                    className="p-4 rounded-2xl border flex items-center gap-3"
+                    style={{
+                      backgroundColor: 'rgba(255, 184, 77, 0.15)',
+                      borderColor: brand.amber,
+                    }}
+                  >
+                    <span className="text-3xl">🔥</span>
+                    <div>
+                      <p className="font-bold text-sm" style={{ color: brand.amber }}>
+                        Cocinero preparando...
+                      </p>
+                      <p className="text-xs mt-0.5" style={{ color: '#FFD79A' }}>
+                        La cocina está trabajando en esta orden
+                      </p>
+                    </div>
+                  </div>
+                )}
+
                 <div
                   className="p-4 rounded-2xl space-y-3 border"
                   style={{
@@ -707,10 +773,10 @@ export default function WaiterDashboard() {
                       {submitting ? (
                         <>
                           <span className="inline-block w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin"></span>
-                          Enviando...
+                          Enviando a cocina...
                         </>
                       ) : (
-                        '✓ Confirmar y Enviar'
+                        '🍳 Enviar a Cocina'
                       )}
                     </button>
                   </div>
